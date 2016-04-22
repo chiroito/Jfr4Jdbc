@@ -1,7 +1,7 @@
 # Jfr4Jdbc
 
 ## Attention
-**Jfr4Jdbc is NOT Oracle product. It is required Java Flight Recorder. If you would like to know the license of Java Flight Recorder, please check the BCL For Java SE or, please contact the Oracle. **  
+**Jfr4Jdbc is NOT Oracle product. It requires Java Flight Recorder. If you would like to know the license of Java Flight Recorder, please check the BCL For Java SE or, please contact the Oracle. **  
 BCL For Java SE
 http://www.oracle.com/technetwork/java/javase/terms/license/index.html  
 Contact Oracle 
