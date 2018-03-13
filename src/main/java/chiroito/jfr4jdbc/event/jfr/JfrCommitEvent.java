@@ -1,28 +1,19 @@
 package chiroito.jfr4jdbc.event.jfr;
 
-import com.oracle.jrockit.jfr.EventDefinition;
-import com.oracle.jrockit.jfr.EventToken;
-import com.oracle.jrockit.jfr.ValueDefinition;
-
 import chiroito.jfr4jdbc.event.CommitEvent;
+import jdk.jfr.Label;
 
-@SuppressWarnings({ "deprecation", "restriction" })
-@EventDefinition(name = "Commit", path = "jdbc/Commit", thread = true)
+@Label("Commit")
 public class JfrCommitEvent extends JfrJdbcEvent implements CommitEvent {
 
-	public JfrCommitEvent(EventToken paramEventToken) {
-		super(paramEventToken);
-	}
+    @Label("ConnectionId")
+    private int connectionId;
 
-	@ValueDefinition(name = "ConnectionId", relationKey = "ConnectionId")
-	private int connectionId;
+    public void setConnectionId(int connectionId) {
+        this.connectionId = connectionId;
+    }
 
-	@Override
-	public void setConnectionId(int connectionId) {
-		this.connectionId = connectionId;
-	}
-
-	public int getConnectionId() {
-		return connectionId;
-	}
+    public int getConnectionId() {
+        return connectionId;
+    }
 }

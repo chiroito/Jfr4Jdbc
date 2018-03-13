@@ -1,28 +1,19 @@
 package chiroito.jfr4jdbc.event.jfr;
 
-import com.oracle.jrockit.jfr.EventDefinition;
-import com.oracle.jrockit.jfr.EventToken;
-import com.oracle.jrockit.jfr.ValueDefinition;
-
 import chiroito.jfr4jdbc.event.CloseEvent;
+import jdk.jfr.Label;
 
-@SuppressWarnings({ "deprecation", "restriction" })
-@EventDefinition(name = "Close", path = "jdbc/Close", thread = true)
-public class JfrCloseEvent extends JfrJdbcEvent implements CloseEvent{
+@Label("Close")
+public class JfrCloseEvent extends JfrJdbcEvent implements CloseEvent {
 
-	public JfrCloseEvent(EventToken paramEventToken) {
-		super(paramEventToken);
-	}
+    @Label("ConnectionId")
+    private int connectionId;
 
-	@ValueDefinition(name = "ConnectionId", relationKey = "ConnectionId")
-	private int connectionId;
+    public void setConnectionId(int connectionId) {
+        this.connectionId = connectionId;
+    }
 
-	@Override
-	public void setConnectionId(int connectionId) {
-		this.connectionId = connectionId;
-	}
-
-	public int getConnectionId() {
-		return connectionId;
-	}
+    public int getConnectionId() {
+        return connectionId;
+    }
 }

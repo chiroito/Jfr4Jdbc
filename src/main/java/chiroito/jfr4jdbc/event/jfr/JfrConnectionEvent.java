@@ -1,100 +1,85 @@
 package chiroito.jfr4jdbc.event.jfr;
 
-import com.oracle.jrockit.jfr.EventDefinition;
-import com.oracle.jrockit.jfr.EventToken;
-import com.oracle.jrockit.jfr.ValueDefinition;
-
 import chiroito.jfr4jdbc.event.ConnectEvent;
+import jdk.jfr.Label;
 
-@SuppressWarnings({ "deprecation", "restriction" })
-@EventDefinition(name = "Connection", path = "jdbc/Connection", thread = true)
+@Label("Connection")
 public class JfrConnectionEvent extends JfrJdbcEvent implements ConnectEvent {
 
-	public JfrConnectionEvent(EventToken paramEventToken) {
-		super(paramEventToken);
-	}
+    @Label("URL")
+    private String url;
 
-	@ValueDefinition(name = "URL")
-	private String url;
+    @Label("ConnectionClass")
+    private String connectionClass;
 
-	@ValueDefinition(name = "ConnectionClass")
-	private String connectionClass;
+    @Label("ConnectionId")
+    private int connectionId;
 
-	@ValueDefinition(name = "ConnectionId", relationKey = "ConnectionId")
-	private int connectionId;
+    @Label("DataSourceId")
+    private int dataSourceId;
 
-	@ValueDefinition(name = "DataSourceId", relationKey = "dataSourceId")
-	private int dataSourceId;
-	
-	@ValueDefinition(name = "DataSourceClass")
-	private String dataSourceClass;
-	
-	@ValueDefinition(name = "UserName")
-	private String userName;
-	
-	@ValueDefinition(name = "Password")
-	private String password;
-	
-	@Override
-	public void setConnectionId(int connectionId) {
-		this.connectionId = connectionId;
-	}
+    @Label("DataSourceClass")
+    private String dataSourceClass;
 
-	@Override
-	public void setUrl(String delegateUrl) {
-		this.url = delegateUrl;
-	}
+    @Label("UserName")
+    private String userName;
 
-	@Override
-	public void setConnectionClass(Class<?> clazz) {
-		this.connectionClass = clazz.getCanonicalName();
-	}
+    @Label("Password")
+    private String password;
 
-	@Override
-	public void setDataSourceId(int datasourceId) {
-		this.dataSourceId = datasourceId;
-	}
+    public void setConnectionId(int connectionId) {
+        this.connectionId = connectionId;
+    }
 
-	@Override
-	public void setDataSourceClass(Class<?> clazz) {
-		this.dataSourceClass = clazz.getCanonicalName();
-	}
+    public void setUrl(String delegateUrl) {
+        this.url = delegateUrl;
+    }
 
-	@Override
-	public void setUserName(String userName) {
-		this.userName = userName;
-	}
+    public void setConnectionClass(Class<?> clazz) {
+        this.connectionClass = clazz.getCanonicalName();
+    }
 
-	@Override
-	public void setPassword(String password) {
-		this.password = password;
-	}
-	
-	public String getUrl() {
-		return url;
-	}
+    public void setDataSourceId(int datasourceId) {
+        this.dataSourceId = datasourceId;
+    }
 
-	public String getConnectionClass() {
-		return connectionClass;
-	}
+    public void setDataSourceClass(Class<?> clazz) {
+        this.dataSourceClass = clazz.getCanonicalName();
+    }
 
-	public int getConnectionId() {
-		return connectionId;
-	}
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
 
-	public int getDataSourceId() {
-		return dataSourceId;
-	}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-	public String getDataSourceClass() {
-		return dataSourceClass;
-	}
+    public String getUrl() {
+        return url;
+    }
 
-	public String getUserName() {
-		return userName;
-	}
+    public String getConnectionClass() {
+        return connectionClass;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public int getConnectionId() {
+        return connectionId;
+    }
+
+    public int getDataSourceId() {
+        return dataSourceId;
+    }
+
+    public String getDataSourceClass() {
+        return dataSourceClass;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
 }
