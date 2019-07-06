@@ -1,23 +1,14 @@
 package chiroito.jfr4jdbc.event.jfr;
 
-import com.oracle.jrockit.jfr.EventDefinition;
-import com.oracle.jrockit.jfr.EventToken;
-import com.oracle.jrockit.jfr.ValueDefinition;
-
 import chiroito.jfr4jdbc.event.RollbackEvent;
+import jdk.jfr.Label;
 
-@SuppressWarnings({ "deprecation", "restriction" })
-@EventDefinition(name = "Rollback", path = "jdbc/Rollback", thread = true)
+@Label("Rollback")
 public class JfrRollbackEvent extends JfrJdbcEvent implements RollbackEvent{
 	
-	public JfrRollbackEvent(EventToken paramEventToken) {
-		super(paramEventToken);
-	}
-
-	@ValueDefinition(name = "ConnectionId", relationKey = "ConnectionId")
+	@Label("ConnectionId")
 	private int connectionId;
 	
-	@Override
 	public void setConnectionId(int connectionId) {
 		this.connectionId = connectionId;
 	}
