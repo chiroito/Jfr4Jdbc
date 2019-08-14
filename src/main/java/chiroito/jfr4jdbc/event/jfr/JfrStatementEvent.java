@@ -6,17 +6,17 @@ import jdk.jfr.Label;
 @Label("Statement")
 public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
 
-    @Label("SQL")
+    @Label("sql")
     private String sql;
 
-    @Label("ConnectionId")
+    @Label("connectionId")
     private int connectionId;
 
-    @Label("StatementId")
+    @Label("statementId")
     private int statementId;
 
-    @Label("StatementClass")
-    private String statementClass;
+    @Label("statementClass")
+    private Class<?> statementClass;
 
     @Label("closed")
     private boolean closed;
@@ -36,7 +36,7 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
     }
 
     public void setStatementClass(Class<?> clazz) {
-        this.statementClass = clazz.getCanonicalName();
+        this.statementClass = clazz;
     }
 
     public void setSql(String sql) {
@@ -67,7 +67,7 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
         return statementId;
     }
 
-    public String getStatementClass() {
+    public Class<?> getStatementClass() {
         return statementClass;
     }
 

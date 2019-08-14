@@ -6,7 +6,7 @@ import jdk.jfr.Label;
 @Label("Rollback")
 public class JfrRollbackEvent extends JfrJdbcEvent implements RollbackEvent{
 	
-	@Label("ConnectionId")
+	@Label("connectionId")
 	private int connectionId;
 	
 	public void setConnectionId(int connectionId) {

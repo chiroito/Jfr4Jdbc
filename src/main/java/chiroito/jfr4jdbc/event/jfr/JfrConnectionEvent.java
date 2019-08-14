@@ -6,25 +6,25 @@ import jdk.jfr.Label;
 @Label("Connection")
 public class JfrConnectionEvent extends JfrJdbcEvent implements ConnectEvent {
 
-    @Label("URL")
+    @Label("url")
     private String url;
 
-    @Label("ConnectionClass")
+    @Label("connectionClass")
     private String connectionClass;
 
-    @Label("ConnectionId")
+    @Label("connectionId")
     private int connectionId;
 
-    @Label("DataSourceId")
+    @Label("dataSourceId")
     private int dataSourceId;
 
-    @Label("DataSourceClass")
+    @Label("dataSourceClass")
     private String dataSourceClass;
 
-    @Label("UserName")
+    @Label("userName")
     private String userName;
 
-    @Label("Password")
+    @Label("password")
     private String password;
 
     public void setConnectionId(int connectionId) {

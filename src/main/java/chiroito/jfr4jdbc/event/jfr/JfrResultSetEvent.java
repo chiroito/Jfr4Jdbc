@@ -6,19 +6,19 @@ import jdk.jfr.Label;
 @Label("ResultSet")
 public class JfrResultSetEvent extends JfrJdbcEvent implements ResultSetEvent {
 
-    @Label("RowNo")
+    @Label("rowNo")
     private int rowNo;
 
-    @Label("ConnectionId")
+    @Label("connectionId")
     private int connectionId;
 
-    @Label("StatementId")
+    @Label("statementId")
     private int statementId;
 
-    @Label("ResultSetClass")
-    private String resultSetClass;
+    @Label("resultSetClass")
+    private Class<?> resultSetClass;
 
-    @Label("ResultSetId")
+    @Label("resultSetId")
     private int resultSetId;
 
     public void setConnectionId(int connectionId) {
@@ -30,7 +30,7 @@ public class JfrResultSetEvent extends JfrJdbcEvent implements ResultSetEvent {
     }
 
     public void setResultSetClass(Class<?> clazz) {
-        this.resultSetClass = clazz.getCanonicalName();
+        this.resultSetClass = clazz;
     }
 
     public void setRowNo(int rowNo) {
@@ -53,7 +53,7 @@ public class JfrResultSetEvent extends JfrJdbcEvent implements ResultSetEvent {
         return connectionId;
     }
 
-    public String getResultSetClass() {
+    public Class<?> getResultSetClass() {
         return resultSetClass;
     }
 

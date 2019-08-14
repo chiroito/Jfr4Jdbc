@@ -6,7 +6,7 @@ import jdk.jfr.Label;
 @Label("Close")
 public class JfrCloseEvent extends JfrJdbcEvent implements CloseEvent {
 
-    @Label("ConnectionId")
+    @Label("connectionId")
     private int connectionId;
 
     public void setConnectionId(int connectionId) {

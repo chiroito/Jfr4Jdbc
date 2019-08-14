@@ -6,10 +6,10 @@ import jdk.jfr.Label;
 @Label("Cancel")
 public class JfrCancelEvent extends JfrJdbcEvent implements CancelEvent {
 
-    @Label("ConnectionId")
+    @Label("connectionId")
     private int connectionId;
 
-    @Label("StatementId")
+    @Label("statementId")
     private int statementId;
 
     public void setConnectionId(int connectionId) {
