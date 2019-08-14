@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
+import java.sql.ShardingKey;
 import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Map;
@@ -349,5 +350,35 @@ public class JfrConnection implements Connection {
 	@Override
 	public int getNetworkTimeout() throws SQLException {
 		return this.connection.getNetworkTimeout();
+	}
+
+	@Override
+	public void beginRequest() throws SQLException {
+		this.connection.beginRequest();
+	}
+
+	@Override
+	public void endRequest() throws SQLException {
+		this.connection.endRequest();
+	}
+
+	@Override
+	public boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout) throws SQLException {
+		return this.connection.setShardingKeyIfValid(shardingKey, timeout);
+	}
+
+	@Override
+	public boolean setShardingKeyIfValid(ShardingKey shardingKey, ShardingKey superShardingKey, int timeout) throws SQLException {
+		return this.connection.setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
+	}
+
+	@Override
+	public void setShardingKey(ShardingKey shardingKey) throws SQLException {
+		this.connection.setShardingKey(shardingKey);
+	}
+
+	@Override
+	public void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey) throws SQLException {
+		this.connection.setShardingKey( shardingKey,  superShardingKey);
 	}
 }

@@ -15,6 +15,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLType;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Statement;
@@ -1036,4 +1037,24 @@ public class JfrResultSet implements ResultSet {
 	public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
 		return this.jdbcResultSet.getObject(columnLabel, type);
 	}
+
+    @Override
+    public void updateObject(int columnIndex, Object x, SQLType targetSqlType, int scaleOrLength) throws SQLException {
+        this.jdbcResultSet.updateObject(columnIndex, x, targetSqlType, scaleOrLength);
+    }
+
+    @Override
+    public void updateObject(String columnLabel, Object x, SQLType targetSqlType, int scaleOrLength) throws SQLException {
+        this.jdbcResultSet.updateObject(columnLabel, x, targetSqlType, scaleOrLength);
+    }
+
+    @Override
+    public void updateObject(int columnIndex, Object x, SQLType targetSqlType) throws SQLException {
+        this.jdbcResultSet.updateObject(columnIndex, x, targetSqlType);
+    }
+
+    @Override
+    public void updateObject(String columnLabel, Object x, SQLType targetSqlType) throws SQLException {
+        this.jdbcResultSet.updateObject(columnLabel, x, targetSqlType);
+    }
 }

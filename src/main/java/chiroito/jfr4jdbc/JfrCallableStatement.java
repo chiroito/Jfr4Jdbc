@@ -13,6 +13,7 @@ import java.sql.NClob;
 import java.sql.Ref;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLType;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -597,4 +598,44 @@ public class JfrCallableStatement extends JfrPreparedStatement implements Callab
 	public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
 		return this.jdbcStatement.getObject(parameterName, type);
 	}
+
+    @Override
+    public void setObject(String parameterName, Object x, SQLType targetSqlType, int scaleOrLength) throws SQLException {
+        this.jdbcStatement.setObject(parameterName, x, targetSqlType, scaleOrLength);
+    }
+
+    @Override
+    public void setObject(String parameterName, Object x, SQLType targetSqlType) throws SQLException {
+        this.jdbcStatement.setObject(parameterName, x, targetSqlType);
+    }
+
+    @Override
+    public void registerOutParameter(int parameterIndex, SQLType sqlType) throws SQLException {
+        this.jdbcStatement.registerOutParameter(parameterIndex, sqlType);
+    }
+
+    @Override
+    public void registerOutParameter(int parameterIndex, SQLType sqlType, int scale) throws SQLException {
+        this.jdbcStatement.registerOutParameter(parameterIndex, sqlType, scale);
+    }
+
+    @Override
+    public void registerOutParameter(int parameterIndex, SQLType sqlType, String typeName) throws SQLException {
+        this.jdbcStatement.registerOutParameter(parameterIndex, sqlType, typeName);
+    }
+
+    @Override
+    public void registerOutParameter(String parameterName, SQLType sqlType) throws SQLException {
+        this.jdbcStatement.registerOutParameter(parameterName, sqlType);
+    }
+
+    @Override
+    public void registerOutParameter(String parameterName, SQLType sqlType, int scale) throws SQLException {
+        this.jdbcStatement.registerOutParameter(parameterName, sqlType, scale);
+    }
+
+    @Override
+    public void registerOutParameter(String parameterName, SQLType sqlType, String typeName) throws SQLException {
+        this.jdbcStatement.registerOutParameter(parameterName, sqlType, typeName);
+    }
 }

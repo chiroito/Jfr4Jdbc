@@ -2,8 +2,10 @@ package chiroito.jfr4jdbc;
 
 import java.io.PrintWriter;
 import java.sql.Connection;
+import java.sql.ConnectionBuilder;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.ShardingKeyBuilder;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
@@ -117,5 +119,15 @@ public class Jfr4JdbcDataSource implements DataSource {
 	@Override
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
 		return this.datasource.isWrapperFor(iface);
+	}
+
+	@Override
+	public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
+		return this.datasource.createShardingKeyBuilder();
+	}
+
+	@Override
+	public ConnectionBuilder createConnectionBuilder() throws SQLException {
+		return this.datasource.createConnectionBuilder();
 	}
 }

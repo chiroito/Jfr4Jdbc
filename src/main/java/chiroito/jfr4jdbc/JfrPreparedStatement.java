@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLType;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -353,4 +354,19 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
 	public void setBytes(int parameterIndex, byte[] x) throws SQLException {
 		this.jdbcStatement.setBytes(parameterIndex, x);
 	}
+
+    @Override
+    public void setObject(int parameterIndex, Object x, SQLType targetSqlType, int scaleOrLength) throws SQLException {
+        this.jdbcStatement.setObject(parameterIndex, x, targetSqlType, scaleOrLength);
+    }
+
+    @Override
+    public void setObject(int parameterIndex, Object x, SQLType targetSqlType) throws SQLException {
+        this.jdbcStatement.setObject(parameterIndex, x, targetSqlType);
+    }
+
+    @Override
+    public long executeLargeUpdate() throws SQLException {
+        return this.jdbcStatement.executeLargeUpdate();
+    }
 }
