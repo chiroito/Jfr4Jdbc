@@ -426,7 +426,7 @@ public class JfrStatement implements Statement {
 
 	@Override
 	public boolean getMoreResults(int current) throws SQLException {
-		return this.jdbcStatement.getMoreResults();
+        return this.jdbcStatement.getMoreResults(current);
 	}
 
 	@Override

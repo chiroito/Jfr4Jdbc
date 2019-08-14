@@ -25,11 +25,12 @@ public class JfrCallableStatement extends JfrPreparedStatement implements Callab
 	private CallableStatement jdbcStatement;
 
 	public JfrCallableStatement(CallableStatement c, String sql) {
-		super(c, sql);
+        this(c, sql, EventFactory.getDefaultEventFactory());
 	}
 	
 	public JfrCallableStatement(CallableStatement c, String sql, EventFactory factory) {
 		super(c, sql, factory);
+        this.jdbcStatement = c;
 	}
 
 	@Override

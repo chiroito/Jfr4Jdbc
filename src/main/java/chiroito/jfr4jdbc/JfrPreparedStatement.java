@@ -35,6 +35,7 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
 	public JfrPreparedStatement(PreparedStatement p, String sql, EventFactory factory) {
 		super(p, factory);
 		this.sql = sql;
+        this.jdbcStatement = p;
 	}
 	
 	@Override
