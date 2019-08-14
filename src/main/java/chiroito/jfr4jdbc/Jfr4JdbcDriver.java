@@ -133,7 +133,7 @@ public class Jfr4JdbcDriver implements Driver {
 
 	@Override
 	public boolean jdbcCompliant() {
-		return this.delegateJdbcDriver.jdbcCompliant();
+		return true;
 	}
 
 	@Override
