@@ -22,6 +22,9 @@ public class Jfr4JdbcDataSource implements DataSource {
 
 	public Jfr4JdbcDataSource(DataSource datasource, EventFactory factory) {
 		super();
+		if(datasource == null){
+			throw new Jfr4JdbcRuntimeException("No delegate DataSource");
+		}
 		this.datasource = datasource;
 		this.datasourceId = System.identityHashCode(datasource);
 		this.factory = factory;
@@ -61,10 +64,8 @@ public class Jfr4JdbcDataSource implements DataSource {
 		event.begin();
 		event.setUserName(username);
 		event.setPassword(password);
-		if (this.datasource != null) {
-			event.setDataSourceId(this.datasourceId);
-			event.setDataSourceClass(this.datasource.getClass());
-		}
+		event.setDataSourceId(this.datasourceId);
+		event.setDataSourceClass(this.datasource.getClass());
 
 		Connection delegatedCon = null;
 		try {

@@ -44,7 +44,11 @@ public class Jfr4JdbcDriver implements Driver {
 	 */
 	private Driver delegateJdbcDriver;
 	private EventFactory factory = EventFactory.getDefaultEventFactory();
-	
+
+	public Jfr4JdbcDriver(){
+		super();
+	}
+
 	@Override
 	public boolean acceptsURL(String url) throws SQLException {
 
@@ -105,16 +109,25 @@ public class Jfr4JdbcDriver implements Driver {
 
 	@Override
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-		return this.delegateJdbcDriver.getPropertyInfo(url, info);
+		if(this.delegateJdbcDriver == null ){
+			throw new Jfr4JdbcRuntimeException("No delegate Driver");
+		}
+		return this.delegateJdbcDriver.getPropertyInfo(this.getDelegateUrl(url), info);
 	}
 
 	@Override
 	public int getMajorVersion() {
+		if(this.delegateJdbcDriver == null ){
+			throw new Jfr4JdbcRuntimeException("No delegate Driver");
+		}
 		return this.delegateJdbcDriver.getMajorVersion();
 	}
 
 	@Override
 	public int getMinorVersion() {
+		if(this.delegateJdbcDriver == null ){
+			throw new Jfr4JdbcRuntimeException("No delegate Driver");
+		}
 		return this.delegateJdbcDriver.getMinorVersion();
 	}
 
@@ -125,6 +138,9 @@ public class Jfr4JdbcDriver implements Driver {
 
 	@Override
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+		if(this.delegateJdbcDriver == null ){
+			throw new Jfr4JdbcRuntimeException("No delegate Driver");
+		}
 		return this.delegateJdbcDriver.getParentLogger();
 	}
 }
