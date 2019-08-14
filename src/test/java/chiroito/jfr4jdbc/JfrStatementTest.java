@@ -52,7 +52,7 @@ class JfrStatementTest {
 
         fr.stop();
 
-        System.out.printf("start: "+System.nanoTime());
+        System.out.printf("start: " + System.nanoTime());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -76,7 +76,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: "+System.nanoTime());
+        System.out.printf("start: " + System.nanoTime());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -100,7 +100,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: "+start.toString()+", end:"+LocalDateTime.now());
+        System.out.printf("start: " + start.toString() + ", end:" + LocalDateTime.now());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -125,7 +125,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: "+start.toString()+", end:"+LocalDateTime.now());
+        System.out.printf("start: " + start.toString() + ", end:" + LocalDateTime.now());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -152,7 +152,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: "+start.toString()+", end:"+LocalDateTime.now());
+        System.out.printf("start: " + start.toString() + ", end:" + LocalDateTime.now());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);

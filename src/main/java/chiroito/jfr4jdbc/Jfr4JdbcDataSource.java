@@ -1,133 +1,128 @@
 package chiroito.jfr4jdbc;
 
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.ConnectionBuilder;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.ShardingKeyBuilder;
-import java.util.logging.Logger;
+import chiroito.jfr4jdbc.event.ConnectEvent;
 
 import javax.sql.DataSource;
-
-import chiroito.jfr4jdbc.event.ConnectEvent;
+import java.io.PrintWriter;
+import java.sql.*;
+import java.util.logging.Logger;
 
 public class Jfr4JdbcDataSource implements DataSource {
 
-	private final DataSource datasource;
-	private final int datasourceId;
-	private final EventFactory factory;
+    private final DataSource datasource;
+    private final int datasourceId;
+    private final EventFactory factory;
 
-	public Jfr4JdbcDataSource(DataSource datasource) {
-		this(datasource, EventFactory.getDefaultEventFactory());
-	}
+    public Jfr4JdbcDataSource(DataSource datasource) {
+        this(datasource, EventFactory.getDefaultEventFactory());
+    }
 
-	public Jfr4JdbcDataSource(DataSource datasource, EventFactory factory) {
-		super();
-		if(datasource == null){
-			throw new Jfr4JdbcRuntimeException("No delegate DataSource");
-		}
-		this.datasource = datasource;
-		this.datasourceId = System.identityHashCode(datasource);
-		this.factory = factory;
-	}
-	
-	@Override
-	public Connection getConnection() throws SQLException {
+    public Jfr4JdbcDataSource(DataSource datasource, EventFactory factory) {
+        super();
+        if (datasource == null) {
+            throw new Jfr4JdbcRuntimeException("No delegate DataSource");
+        }
+        this.datasource = datasource;
+        this.datasourceId = System.identityHashCode(datasource);
+        this.factory = factory;
+    }
 
-		ConnectEvent event = factory.createConnectEvent();
+    @Override
+    public Connection getConnection() throws SQLException {
 
-		event.begin();
-		event.setDataSourceId(this.datasourceId);
-		event.setDataSourceClass(this.datasource.getClass());
+        ConnectEvent event = factory.createConnectEvent();
 
-		Connection delegatedCon = null;
-		try {
-			delegatedCon = this.datasource.getConnection();
-			if (delegatedCon != null) {
-				
-				event.setConnectionClass(delegatedCon.getClass());
-				event.setConnectionId(System.identityHashCode(delegatedCon));
-			}
+        event.begin();
+        event.setDataSourceId(this.datasourceId);
+        event.setDataSourceClass(this.datasource.getClass());
 
-		} catch (SQLException | RuntimeException e) {
-			throw e;
-		} finally {
-			event.commit();
-		}
+        Connection delegatedCon = null;
+        try {
+            delegatedCon = this.datasource.getConnection();
+            if (delegatedCon != null) {
 
-		return new JfrConnection(delegatedCon);
-	}
+                event.setConnectionClass(delegatedCon.getClass());
+                event.setConnectionId(System.identityHashCode(delegatedCon));
+            }
 
-	@Override
-	public Connection getConnection(String username, String password) throws SQLException {
-		ConnectEvent event = factory.createConnectEvent();
+        } catch (SQLException | RuntimeException e) {
+            throw e;
+        } finally {
+            event.commit();
+        }
 
-		event.begin();
-		event.setUserName(username);
-		event.setPassword(password);
-		event.setDataSourceId(this.datasourceId);
-		event.setDataSourceClass(this.datasource.getClass());
+        return new JfrConnection(delegatedCon);
+    }
 
-		Connection delegatedCon = null;
-		try {
-			delegatedCon = this.datasource.getConnection(username, password);
-			if (delegatedCon != null) {
-				event.setConnectionClass(delegatedCon.getClass());
-				event.setConnectionId(System.identityHashCode(delegatedCon));
-			}
+    @Override
+    public Connection getConnection(String username, String password) throws SQLException {
+        ConnectEvent event = factory.createConnectEvent();
 
-		} catch (SQLException | RuntimeException e) {
-			throw e;
-		} finally {
-			event.commit();
-		}
+        event.begin();
+        event.setUserName(username);
+        event.setPassword(password);
+        event.setDataSourceId(this.datasourceId);
+        event.setDataSourceClass(this.datasource.getClass());
 
-		return new JfrConnection(delegatedCon);
-	}
+        Connection delegatedCon = null;
+        try {
+            delegatedCon = this.datasource.getConnection(username, password);
+            if (delegatedCon != null) {
+                event.setConnectionClass(delegatedCon.getClass());
+                event.setConnectionId(System.identityHashCode(delegatedCon));
+            }
 
-	@Override
-	public PrintWriter getLogWriter() throws SQLException {
-		return this.datasource.getLogWriter();
-	}
+        } catch (SQLException | RuntimeException e) {
+            throw e;
+        } finally {
+            event.commit();
+        }
 
-	@Override
-	public void setLogWriter(PrintWriter out) throws SQLException {
-		this.datasource.setLogWriter(out);
-	}
+        return new JfrConnection(delegatedCon);
+    }
 
-	@Override
-	public void setLoginTimeout(int seconds) throws SQLException {
-		this.datasource.setLoginTimeout(seconds);
-	}
+    @Override
+    public PrintWriter getLogWriter() throws SQLException {
+        return this.datasource.getLogWriter();
+    }
 
-	@Override
-	public int getLoginTimeout() throws SQLException {
-		return this.datasource.getLoginTimeout();
-	}
+    @Override
+    public void setLogWriter(PrintWriter out) throws SQLException {
+        this.datasource.setLogWriter(out);
+    }
 
-	@Override
-	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		return this.datasource.getParentLogger();
-	}
+    @Override
+    public void setLoginTimeout(int seconds) throws SQLException {
+        this.datasource.setLoginTimeout(seconds);
+    }
 
-	@Override
-	public <T> T unwrap(Class<T> iface) throws SQLException {
-		return this.datasource.unwrap(iface);
-	}
+    @Override
+    public int getLoginTimeout() throws SQLException {
+        return this.datasource.getLoginTimeout();
+    }
 
-	@Override
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		return this.datasource.isWrapperFor(iface);
-	}
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        return this.datasource.getParentLogger();
+    }
 
-	@Override
-	public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
-		return this.datasource.createShardingKeyBuilder();
-	}
+    @Override
+    public <T> T unwrap(Class<T> iface) throws SQLException {
+        return this.datasource.unwrap(iface);
+    }
 
-	@Override
-	public ConnectionBuilder createConnectionBuilder() throws SQLException {
-		return this.datasource.createConnectionBuilder();
-	}
+    @Override
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        return this.datasource.isWrapperFor(iface);
+    }
+
+    @Override
+    public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
+        return this.datasource.createShardingKeyBuilder();
+    }
+
+    @Override
+    public ConnectionBuilder createConnectionBuilder() throws SQLException {
+        return this.datasource.createConnectionBuilder();
+    }
 }

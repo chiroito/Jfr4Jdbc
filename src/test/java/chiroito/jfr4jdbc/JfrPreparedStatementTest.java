@@ -17,7 +17,7 @@ import java.sql.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -212,16 +212,16 @@ class JfrPreparedStatementTest {
     @Test
     void setBlob() throws SQLException {
         JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, "sql");
-        statement.setBlob(0, (InputStream)null);
-        verify(this.delegatePstate).setBlob(0, (InputStream)null);
+        statement.setBlob(0, (InputStream) null);
+        verify(this.delegatePstate).setBlob(0, (InputStream) null);
     }
 
     @DisplayName("setBlob")
     @Test
     void setBlob1() throws SQLException {
         JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, "sql");
-        statement.setBlob(0, (Blob)null);
-        verify(this.delegatePstate).setBlob(0, (Blob)null);
+        statement.setBlob(0, (Blob) null);
+        verify(this.delegatePstate).setBlob(0, (Blob) null);
     }
 
     @DisplayName("setBlob")
@@ -284,16 +284,16 @@ class JfrPreparedStatementTest {
     @Test
     void setClob() throws SQLException {
         JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, "sql");
-        statement.setClob(0, (Reader)null);
-        verify(this.delegatePstate).setClob(0, (Reader)null);
+        statement.setClob(0, (Reader) null);
+        verify(this.delegatePstate).setClob(0, (Reader) null);
     }
 
     @DisplayName("setClob")
     @Test
     void setClob1() throws SQLException {
         JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, "sql");
-        statement.setClob(0, (Clob)null);
-        verify(this.delegatePstate).setClob(0, (Clob)null);
+        statement.setClob(0, (Clob) null);
+        verify(this.delegatePstate).setClob(0, (Clob) null);
     }
 
     @DisplayName("setClob")
@@ -372,16 +372,16 @@ class JfrPreparedStatementTest {
     @Test
     void setNClob() throws SQLException {
         JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, "sql");
-        statement.setNClob(0, (Reader)null);
-        verify(this.delegatePstate).setNClob(0, (Reader)null);
+        statement.setNClob(0, (Reader) null);
+        verify(this.delegatePstate).setNClob(0, (Reader) null);
     }
 
     @DisplayName("setNClob")
     @Test
     void setNClob1() throws SQLException {
         JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, "sql");
-        statement.setNClob(0, (NClob)null);
-        verify(this.delegatePstate).setNClob(0, (NClob)null);
+        statement.setNClob(0, (NClob) null);
+        verify(this.delegatePstate).setNClob(0, (NClob) null);
     }
 
     @DisplayName("setNClob")

@@ -513,16 +513,16 @@ class JfrResultSetTest {
     @Test
     void getObject1() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.getObject(0, (Map<String, Class<?>>)null);
-        verify(this.delegateResultSet).getObject(0, (Map<String, Class<?>>)null);
+        resultSet.getObject(0, (Map<String, Class<?>>) null);
+        verify(this.delegateResultSet).getObject(0, (Map<String, Class<?>>) null);
     }
 
     @DisplayName("getObject")
     @Test
     void getObject2() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.getObject(0,  (Class<Object>)null);
-        verify(this.delegateResultSet).getObject(0,  (Class<Object>)null);
+        resultSet.getObject(0, (Class<Object>) null);
+        verify(this.delegateResultSet).getObject(0, (Class<Object>) null);
     }
 
     @DisplayName("getObject")
@@ -537,16 +537,16 @@ class JfrResultSetTest {
     @Test
     void getObject4() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.getObject(null, (Map<String, Class<?>>)null);
-        verify(this.delegateResultSet).getObject(null, (Map<String, Class<?>>)null);
+        resultSet.getObject(null, (Map<String, Class<?>>) null);
+        verify(this.delegateResultSet).getObject(null, (Map<String, Class<?>>) null);
     }
 
     @DisplayName("getObject")
     @Test
     void getObject5() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.getObject(null, (Class<Object>)null);
-        verify(this.delegateResultSet).getObject(null, (Class<Object>)null);
+        resultSet.getObject(null, (Class<Object>) null);
+        verify(this.delegateResultSet).getObject(null, (Class<Object>) null);
     }
 
     @DisplayName("getRef")
@@ -1049,8 +1049,8 @@ class JfrResultSetTest {
     @Test
     void updateBlob() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.updateBlob(0, (Blob)null);
-        verify(this.delegateResultSet).updateBlob(0, (Blob)null);
+        resultSet.updateBlob(0, (Blob) null);
+        verify(this.delegateResultSet).updateBlob(0, (Blob) null);
     }
 
     @DisplayName("updateBlob")
@@ -1058,7 +1058,7 @@ class JfrResultSetTest {
     void updateBlob1() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
         resultSet.updateBlob(0, (InputStream) null);
-        verify(this.delegateResultSet).updateBlob(0, (InputStream)null);
+        verify(this.delegateResultSet).updateBlob(0, (InputStream) null);
     }
 
     @DisplayName("updateBlob")
@@ -1073,16 +1073,16 @@ class JfrResultSetTest {
     @Test
     void updateBlob3() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.updateBlob(null,  (Blob)null);
-        verify(this.delegateResultSet).updateBlob(null,  (Blob)null);
+        resultSet.updateBlob(null, (Blob) null);
+        verify(this.delegateResultSet).updateBlob(null, (Blob) null);
     }
 
     @DisplayName("updateBlob")
     @Test
     void updateBlob4() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.updateBlob(null, (InputStream)null);
-        verify(this.delegateResultSet).updateBlob(null, (InputStream)null);
+        resultSet.updateBlob(null, (InputStream) null);
+        verify(this.delegateResultSet).updateBlob(null, (InputStream) null);
     }
 
     @DisplayName("updateBlob")
@@ -1193,8 +1193,8 @@ class JfrResultSetTest {
     @Test
     void updateClob() throws SQLException {
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        resultSet.updateClob(0, (Clob)null);
-        verify(this.delegateResultSet).updateClob(0, (Clob)null);
+        resultSet.updateClob(0, (Clob) null);
+        verify(this.delegateResultSet).updateClob(0, (Clob) null);
     }
 
     @DisplayName("updateClob")
