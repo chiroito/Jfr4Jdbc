@@ -44,15 +44,12 @@ class JfrStatementTest {
     @DisplayName("create StatementEvent")
     @Test
     void createStatementEvent() throws Exception {
-        LocalDateTime start = LocalDateTime.now();
         JfrStatement statement = new JfrStatement(this.delegateState);
         FlightRecording fr = FlightRecording.start();
         statement.executeQuery(SAMPLE_SQL);
-        TimeUnit.SECONDS.sleep(5);
 
         fr.stop();
 
-        System.out.printf("start: " + System.nanoTime());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -68,7 +65,6 @@ class JfrStatementTest {
     @DisplayName("create StatementEvent with Poolable")
     @Test
     void createStatementEventPoolable() throws Exception {
-        LocalDateTime start = LocalDateTime.now();
         when(delegateState.isPoolable()).thenReturn(true);
 
         JfrStatement statement = new JfrStatement(this.delegateState);
@@ -76,7 +72,6 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: " + System.nanoTime());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -92,7 +87,6 @@ class JfrStatementTest {
     @DisplayName("create StatementEvent with Closed")
     @Test
     void createStatementEventClosed() throws Exception {
-        LocalDateTime start = LocalDateTime.now();
         when(delegateState.isClosed()).thenReturn(true);
 
         JfrStatement statement = new JfrStatement(this.delegateState);
@@ -100,7 +94,6 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: " + start.toString() + ", end:" + LocalDateTime.now());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -116,7 +109,6 @@ class JfrStatementTest {
     @DisplayName("create StatementEvent Connection")
     @Test
     void createStatementEventConnection() throws Exception {
-        LocalDateTime start = LocalDateTime.now();
         Connection delegatedCon = mock(Connection.class);
         when(delegateState.getConnection()).thenReturn(delegatedCon);
 
@@ -125,7 +117,6 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: " + start.toString() + ", end:" + LocalDateTime.now());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
@@ -141,7 +132,6 @@ class JfrStatementTest {
     @DisplayName("create StatementEvent Auto Commit")
     @Test
     void createStatementEventAutoCommit() throws Exception {
-        LocalDateTime start = LocalDateTime.now();
 
         Connection delegatedCon = mock(Connection.class);
         when(delegateState.getConnection()).thenReturn(delegatedCon);
@@ -152,7 +142,6 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        System.out.printf("start: " + start.toString() + ", end:" + LocalDateTime.now());
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
