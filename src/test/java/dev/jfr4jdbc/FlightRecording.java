@@ -41,7 +41,6 @@ public class FlightRecording {
 
     public void stop() throws Jfr4jdbcTestException {
         try {
-            recording.stop();
             recording.disable(JfrCancelEvent.class);
             recording.disable(JfrCloseEvent.class);
             recording.disable(JfrCommitEvent.class);
@@ -50,6 +49,7 @@ public class FlightRecording {
             recording.disable(JfrRollbackEvent.class);
             recording.disable(JfrStatementEvent.class);
             recording.dump(this.dumpFilePath);
+            recording.stop();
             recording.close();
         } catch (Exception e) {
             throw new Jfr4jdbcTestException(e);
