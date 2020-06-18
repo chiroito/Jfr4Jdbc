@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JfrStatementTest {
 
-    protected static final String SAMPLE_SQL = "SELECT 1 FROM DUAL";
+    protected static final String SAMPLE_SQL = "SELECT 1";
 
     @Mock
     Statement delegateState;
