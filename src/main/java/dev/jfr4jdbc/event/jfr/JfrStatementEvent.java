@@ -30,6 +30,9 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
     @Label("prepared")
     private boolean prepared;
 
+    @Label("parameter")
+    private String parameter;
+
     public void setConnectionId(int connectionId) {
         this.connectionId = connectionId;
     }
@@ -62,6 +65,10 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
         this.prepared = prepared;
     }
 
+    public String getParameter() {
+        return parameter;
+    }
+
     public String getSql() {
         return sql;
     }
@@ -90,7 +97,11 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
         return autoCommit;
     }
 
-    public boolean getPrepared(){
+    public void setParameter(String parameter) {
+        this.parameter = parameter;
+    }
+
+    public boolean getPrepared() {
         return prepared;
     }
 }

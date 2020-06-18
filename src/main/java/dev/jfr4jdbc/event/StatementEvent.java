@@ -17,4 +17,6 @@ public interface StatementEvent extends JdbcEvent {
     public void setPoolable(boolean poolable);
 
     public void setPrepared(boolean prepared);
+
+    public void setParameter(String parameter);
 }
