@@ -28,6 +28,7 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     public ResultSet executeQuery() throws SQLException {
 
         StatementEvent event = super.createEvent(sql);
+        event.setPrepared(true);
         event.begin();
 
         ResultSet rs = null;
@@ -46,6 +47,7 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     public int executeUpdate() throws SQLException {
 
         StatementEvent event = super.createEvent(sql);
+        event.setPrepared(true);
         event.begin();
 
         int ret = 0;
@@ -64,6 +66,7 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     public boolean execute() throws SQLException {
 
         StatementEvent event = super.createEvent(sql);
+        event.setPrepared(true);
         event.begin();
 
         boolean ret = false;

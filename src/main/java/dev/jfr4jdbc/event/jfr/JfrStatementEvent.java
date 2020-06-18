@@ -27,6 +27,9 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
     @Label("autoCommit")
     private boolean autoCommit;
 
+    @Label("prepared")
+    private boolean prepared;
+
     public void setConnectionId(int connectionId) {
         this.connectionId = connectionId;
     }
@@ -55,6 +58,10 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
         this.poolable = poolable;
     }
 
+    public void setPrepared(boolean prepared) {
+        this.prepared = prepared;
+    }
+
     public String getSql() {
         return sql;
     }
@@ -81,5 +88,9 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
 
     public boolean getAutoCommit() {
         return autoCommit;
+    }
+
+    public boolean getPrepared(){
+        return prepared;
     }
 }
