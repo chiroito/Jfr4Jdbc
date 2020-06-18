@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +46,8 @@ class JfrPreparedStatementTest {
 
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
         assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(event.getBoolean("prepared"));
     }
 
     @DisplayName("return JfrResultSet by executeQuery")
@@ -66,6 +69,8 @@ class JfrPreparedStatementTest {
 
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
         assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(event.getBoolean("prepared"));
     }
 
     @DisplayName("create StatementEvent by execute")
@@ -78,6 +83,8 @@ class JfrPreparedStatementTest {
 
         List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
         assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(event.getBoolean("prepared"));
     }
 
     @DisplayName("addBatch")

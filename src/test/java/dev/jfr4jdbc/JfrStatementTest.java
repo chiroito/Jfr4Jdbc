@@ -16,9 +16,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,6 +58,7 @@ class JfrStatementTest {
         assertTrue(event.getClass("statementClass") != null);
         assertFalse(event.getInt("connectionId") > 0);
         assertFalse(event.getBoolean("autoCommit"));
+        assertFalse(event.getBoolean("prepared"));
     }
 
     @DisplayName("create StatementEvent with Poolable")
@@ -82,6 +81,7 @@ class JfrStatementTest {
         assertTrue(event.getClass("statementClass") != null);
         assertFalse(event.getInt("connectionId") > 0);
         assertFalse(event.getBoolean("autoCommit"));
+        assertFalse(event.getBoolean("prepared"));
     }
 
     @DisplayName("create StatementEvent with Closed")
@@ -104,6 +104,7 @@ class JfrStatementTest {
         assertTrue(event.getClass("statementClass") != null);
         assertFalse(event.getInt("connectionId") > 0);
         assertFalse(event.getBoolean("autoCommit"));
+        assertFalse(event.getBoolean("prepared"));
     }
 
     @DisplayName("create StatementEvent Connection")
@@ -127,6 +128,7 @@ class JfrStatementTest {
         assertTrue(event.getClass("statementClass") != null);
         assertTrue(event.getInt("connectionId") > 0);
         assertFalse(event.getBoolean("autoCommit"));
+        assertFalse(event.getBoolean("prepared"));
     }
 
     @DisplayName("create StatementEvent Auto Commit")
@@ -152,6 +154,7 @@ class JfrStatementTest {
         assertTrue(event.getClass("statementClass") != null);
         assertTrue(event.getInt("connectionId") > 0);
         assertTrue(event.getBoolean("autoCommit"));
+        assertFalse(event.getBoolean("prepared"));
     }
 
     @DisplayName("return JfrResultSet by executeQuery")
