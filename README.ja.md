@@ -24,7 +24,7 @@ Jfr4Jdbcはデータベースサーバの種類を問わず利用可能です。
 使い方は javax.sql.DataSource を使う方法と java.sql.Driver を使う方法の 2 種類あります。  
 
 ### DataSource を使う場合
-chiroito.jfr4jdbc.Jfr4JdbcDataSource のコンストラクタに DataSource のインスタンスを引数に与えて下さい。
+Jfr4JdbcDataSource のコンストラクタに DataSource のインスタンスを引数に与えて下さい。
 
 #### OracleDataSource を使う例：
 ```java
@@ -35,7 +35,7 @@ Connection con = jds.getConnection();
 ```
 
 ### Driver を使う場合
-chiroito.jfr4jdbc.Jfr4JdbcDriver クラスを指定しJDBCの接続子の前の方に jfr を足すだけです。
+Jfr4JdbcDriver クラスを指定しJDBCの接続子の前の方に jfr を足すだけです。
 
 #### Driver を使う例：  
 ##### 変更前  

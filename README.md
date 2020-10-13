@@ -22,7 +22,7 @@ The following events are recorded.
 You can choose how to use javax.sql.DataSource and java.sql.Driver.
 
 ### How to use the javax.sql.DataSource
-You pass javax.sql.DataSource instance to the construct argument of chiroito.jfr4jdbc.Jfr4JdbcDataSource.
+You pass javax.sql.DataSource instance to the construct argument of Jfr4JdbcDataSource.
 
 #### Sample of DataSource：
 ```java

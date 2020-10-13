@@ -1,7 +1,5 @@
 package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.event.jfr.JfrCancelEvent;
-import dev.jfr4jdbc.event.jfr.JfrStatementEvent;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -17,7 +16,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -48,7 +46,73 @@ class JfrStatementTest {
 
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
+        assertTrue(event.getInt("statementId") > 0);
+        assertFalse(event.getBoolean("poolable"));
+        assertFalse(event.getBoolean("closed"));
+        assertTrue(event.getClass("statementClass") != null);
+        assertFalse(event.getInt("connectionId") > 0);
+        assertFalse(event.getBoolean("autoCommit"));
+        assertFalse(event.getBoolean("prepared"));
+    }
+
+    @DisplayName("create StatementEvent throw exception as expected")
+    @Test
+    void createStatementEventThrowSQLException() throws Exception {
+        when(this.delegateState.executeQuery(SAMPLE_SQL)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeQuery(SAMPLE_SQL);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
+        assertTrue(event.getInt("statementId") > 0);
+        assertFalse(event.getBoolean("poolable"));
+        assertFalse(event.getBoolean("closed"));
+        assertTrue(event.getClass("statementClass") != null);
+        assertFalse(event.getInt("connectionId") > 0);
+        assertFalse(event.getBoolean("autoCommit"));
+        assertFalse(event.getBoolean("prepared"));
+    }
+
+    @DisplayName("create StatementEvent throw exception as unexpected")
+    @Test
+    void createStatementEventThrowRuntimeException() throws Exception {
+        when(this.delegateState.executeQuery(SAMPLE_SQL)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeQuery(SAMPLE_SQL);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
@@ -71,7 +135,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
@@ -94,7 +158,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
@@ -118,7 +182,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
@@ -144,7 +208,7 @@ class JfrStatementTest {
         statement.executeQuery(SAMPLE_SQL);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Statement")).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
@@ -174,7 +238,55 @@ class JfrStatementTest {
         statement.getGeneratedKeys();
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by getGeneratedKeys throw exception as expected")
+    @Test
+    void createResultSetEventByGetGeneratedKeysThrowSQLException() throws Exception {
+        when(this.delegateState.getGeneratedKeys()).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.getGeneratedKeys();
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by getGeneratedKeys throw exception as unexpected")
+    @Test
+    void createResultSetEventByGetGeneratedKeysThrowRuntimeException() throws Exception {
+        when(this.delegateState.getGeneratedKeys()).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.getGeneratedKeys();
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -195,7 +307,55 @@ class JfrStatementTest {
         statement.executeUpdate(SAMPLE_SQL);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate throw exception as expected")
+    @Test
+    void createStatementEventByExecuteUpdateThrowSQLException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate throw exception as unexpected")
+    @Test
+    void createStatementEventByExecuteUpdateThrowRuntimeException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -207,7 +367,55 @@ class JfrStatementTest {
         statement.executeUpdate(SAMPLE_SQL, 0);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate(sql, autoGeneratedKeys) throw exception as expected")
+    @Test
+    void createStatementEventByExecuteUpdate1ThrowSQLException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL, 0)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL, 0);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate(sql, autoGeneratedKeys) throw exception as unexpected")
+    @Test
+    void createStatementEventByExecuteUpdate1ThrowRuntimeException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL, 0)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL, 0);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -219,7 +427,55 @@ class JfrStatementTest {
         statement.executeUpdate(SAMPLE_SQL, (int[]) null);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate(sql, columnIndexes) throw exception as expected")
+    @Test
+    void createStatementEventByExecuteUpdate2ThrowSQLException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL, (int[]) null)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL, (int[]) null);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate(sql, columnIndexes) throw exception as unexpected")
+    @Test
+    void createStatementEventByExecuteUpdate2ThrowRuntimeException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL, (int[]) null)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL, (int[]) null);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -231,7 +487,55 @@ class JfrStatementTest {
         statement.executeUpdate(SAMPLE_SQL, (String[]) null);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate(sql, columnNames) throw exception as expected")
+    @Test
+    void createStatementEventByExecuteUpdate3ThrowSQLException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL, (String[]) null)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL, (String[]) null);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeUpdate(sql, columnNames) throw exception as unexpected")
+    @Test
+    void createStatementEventByExecuteUpdate3ThrowRuntimeException() throws Exception {
+        when(this.delegateState.executeUpdate(SAMPLE_SQL, (String[]) null)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeUpdate(SAMPLE_SQL, (String[]) null);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -243,7 +547,55 @@ class JfrStatementTest {
         statement.execute(SAMPLE_SQL);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute throw exception as expected")
+    @Test
+    void createStatementEventByExecuteThrowSQLException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute throw exception as unexpected")
+    @Test
+    void createStatementEventByExecuteThrowRuntimeException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -255,7 +607,55 @@ class JfrStatementTest {
         statement.execute(SAMPLE_SQL, 0);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute(sql, autoGeneratedKeys) throw exception as expected")
+    @Test
+    void createStatementEventByExecute1ThrowSQLException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL, 0)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL, 0);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute(sql, autoGeneratedKeys) throw exception as unexpected")
+    @Test
+    void createStatementEventByExecute1ThrowRuntimeException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL, 0)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL, 0);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -267,7 +667,55 @@ class JfrStatementTest {
         statement.execute(SAMPLE_SQL, (int[]) null);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute(sql, columnIndexes) throw exception as expected")
+    @Test
+    void createStatementEventByExecute2ThrowSQLException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL, (int[]) null)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL, (int[]) null);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute(sql, columnIndexes) throw exception as unexpected")
+    @Test
+    void createStatementEventByExecute2ThrowRuntimeException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL, (int[]) null)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL, (int[]) null);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -279,7 +727,55 @@ class JfrStatementTest {
         statement.execute(SAMPLE_SQL, (String[]) null);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute(sql, columnNames) throw exception as expected")
+    @Test
+    void createStatementEventByExecute3ThrowSQLException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL, (String[]) null)).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL, (String[]) null);
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by execute(sql, columnNames) throw exception as unexpected")
+    @Test
+    void createStatementEventByExecute3ThrowRuntimeException() throws Exception {
+        when(this.delegateState.execute(SAMPLE_SQL, (String[]) null)).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.execute(SAMPLE_SQL, (String[]) null);
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -291,7 +787,55 @@ class JfrStatementTest {
         statement.executeBatch();
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeBatch throw exception as expected")
+    @Test
+    void createStatementEventByExecuteBatchThrowSQLException() throws Exception {
+        when(this.delegateState.executeBatch()).thenThrow(new SQLException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeBatch();
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by executeBatch throw exception as unexpected")
+    @Test
+    void createStatementEventByExecuteBatchThrowRuntimeException() throws Exception {
+        when(this.delegateState.executeBatch()).thenThrow(new RuntimeException());
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.executeBatch();
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
     }
 
@@ -303,7 +847,55 @@ class JfrStatementTest {
         statement.cancel();
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrCancelEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Cancel");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by cancel throw exception as expected")
+    @Test
+    void createStatementEventByCancelThrowSQLException() throws Exception {
+        Mockito.doThrow(new SQLException()).when(delegateState).cancel();
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.cancel();
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Cancel");
+        assertEquals(1, events.size());
+    }
+
+    @DisplayName("create ResultSetEvent by cancel throw exception as unexpected")
+    @Test
+    void createStatementEventByCancelThrowRuntimeException() throws Exception {
+        Mockito.doThrow(new RuntimeException()).when(delegateState).cancel();
+
+        JfrStatement statement = new JfrStatement(this.delegateState);
+        FlightRecording fr = FlightRecording.start();
+
+        try {
+            statement.cancel();
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Cancel");
         assertEquals(1, events.size());
     }
 

@@ -11,8 +11,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,24 +63,28 @@ class Jfr4JdbcDataSourceTest {
             fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Connection")).collect(Collectors.toList());
-        assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getInt("dataSourceId") > 0);
-        assertTrue(event.getString("dataSourceClass") != null);
-        assertTrue(event.getString("connectionClass") != null);
-        assertTrue(event.getInt("connectionId") > 0);
-        assertEquals(event.getString("url"), null);
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
+        assertTrue(connectionEvent.getString("dataSourceClass") != null);
+        assertTrue(connectionEvent.getString("connectionClass") != null);
+        assertTrue(connectionEvent.getInt("connectionId") > 0);
+        assertEquals(connectionEvent.getString("url"), null);
     }
 
-    @DisplayName("getConnection to create CloseEvent")
+    @DisplayName("getConnection to create ConnectionEvent throw exception as expected")
     @Test
-    void getConnectionCloseEvent() throws Exception {
-        when(delegatedDs.getConnection()).thenReturn(delegatedCon);
+    void getConnectionConnectEventThrowSQLException() throws Exception {
+        when(delegatedDs.getConnection()).thenThrow(new SQLException());
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection()) {
+            fail();
+        } catch (SQLException e) {
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
@@ -88,11 +92,44 @@ class Jfr4JdbcDataSourceTest {
             fr.stop();
         }
 
-        // Close Event
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Close")).collect(Collectors.toList());
-        assertEquals(events.size(), 1);
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getInt("connectionId") > 0);
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
+        assertTrue(connectionEvent.getString("dataSourceClass") != null);
+        assertEquals(connectionEvent.getString("connectionClass"), null);
+        assertEquals(connectionEvent.getInt("connectionId"), 0);
+        assertEquals(connectionEvent.getString("url"), null);
+    }
+
+    @DisplayName("getConnection to create ConnectionEvent throw exception as unexpected")
+    @Test
+    void getConnectionConnectEventThrowRuntimeException() throws Exception {
+        when(delegatedDs.getConnection()).thenThrow(new RuntimeException());
+
+        Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        FlightRecording fr = FlightRecording.start();
+        try (Connection con = dataSource.getConnection()) {
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
+        assertTrue(connectionEvent.getString("dataSourceClass") != null);
+        assertEquals(connectionEvent.getString("connectionClass"), null);
+        assertEquals(connectionEvent.getInt("connectionId"), 0);
+        assertEquals(connectionEvent.getString("url"), null);
     }
 
     @DisplayName("getConnection with User/Password")
@@ -130,28 +167,32 @@ class Jfr4JdbcDataSourceTest {
             fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Connection")).collect(Collectors.toList());
-        assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getInt("dataSourceId") > 0);
-        assertTrue(event.getString("dataSourceClass") != null);
-        assertTrue(event.getString("connectionClass") != null);
-        assertTrue(event.getInt("connectionId") > 0);
-        assertTrue(event.getString("userName").equals(user));
-        assertTrue(event.getString("password").equals(password));
-        assertEquals(event.getString("url"), null);
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
+        assertTrue(connectionEvent.getString("dataSourceClass") != null);
+        assertTrue(connectionEvent.getString("connectionClass") != null);
+        assertTrue(connectionEvent.getInt("connectionId") > 0);
+        assertTrue(connectionEvent.getString("userName").equals(user));
+        assertTrue(connectionEvent.getString("password").equals(password));
+        assertEquals(connectionEvent.getString("url"), null);
     }
 
-    @DisplayName("getConnection to create CloseEvent with User/Password")
+    @DisplayName("getConnection to create ConnectionEvent with User/Password throw exception as expected")
     @Test
-    void getConnectionUserPassCloseEvent() throws Exception {
-        when(delegatedDs.getConnection(any(), any())).thenReturn(delegatedCon);
+    void getConnectionUserPassConnectEventThrowSQLException() throws Exception {
+        when(delegatedDs.getConnection(any(), any())).thenThrow(new SQLException());
         final String user = "UserX";
         final String password = "PasswordY";
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection(user, password)) {
+            fail();
+        } catch (SQLException e) {
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
@@ -159,11 +200,50 @@ class Jfr4JdbcDataSourceTest {
             fr.stop();
         }
 
-        // Close Event
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Close")).collect(Collectors.toList());
-        assertEquals(events.size(), 1);
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getInt("connectionId") > 0);
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
+        assertTrue(connectionEvent.getString("dataSourceClass") != null);
+        assertEquals(connectionEvent.getString("connectionClass"), null);
+        assertEquals(connectionEvent.getInt("connectionId"), 0);
+        assertTrue(connectionEvent.getString("userName").equals(user));
+        assertTrue(connectionEvent.getString("password").equals(password));
+        assertEquals(connectionEvent.getString("url"), null);
+    }
+
+    @DisplayName("getConnection to create ConnectionEvent with User/Password throw exception as unexpected")
+    @Test
+    void getConnectionUserPassConnectEventThrowRuntimeException() throws Exception {
+        when(delegatedDs.getConnection(any(), any())).thenThrow(new RuntimeException());
+        final String user = "UserX";
+        final String password = "PasswordY";
+
+        Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        FlightRecording fr = FlightRecording.start();
+        try (Connection con = dataSource.getConnection(user, password)) {
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
+        assertTrue(connectionEvent.getString("dataSourceClass") != null);
+        assertEquals(connectionEvent.getString("connectionClass"), null);
+        assertEquals(connectionEvent.getInt("connectionId"), 0);
+        assertTrue(connectionEvent.getString("userName").equals(user));
+        assertTrue(connectionEvent.getString("password").equals(password));
+        assertEquals(connectionEvent.getString("url"), null);
     }
 
     @DisplayName("getLogWriter")

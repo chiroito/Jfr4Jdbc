@@ -23,6 +23,10 @@ public class JfrStatement implements Statement {
         this.factory = factory;
     }
 
+    public int getStatementId() {
+        return this.statementId;
+    }
+
     protected StatementEvent createEvent(String sql) {
 
         StatementEvent event = this.factory.createStatementEvent();

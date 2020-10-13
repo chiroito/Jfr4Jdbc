@@ -80,12 +80,17 @@ public class MockJDBC {
 
         Mockito.lenient().doAnswer((m) -> {
             ResultSet resultSet = Mockito.mock(ResultSet.class);
+            initResultSet(resultSet);
+            when(resultSet.getStatement()).thenReturn(stmt);
             return resultSet;
         }).when(stmt).executeQuery();
 
         if (preparedStatementExtention != null) {
             preparedStatementExtention.accept(stmt);
         }
+    }
+
+    private void initResultSet(ResultSet rs) throws SQLException {
     }
 
     public void extendPreparedStatement(Consumer<PreparedStatement> c) {

@@ -26,6 +26,10 @@ public class JfrConnection implements Connection {
         this.factory = factory;
     }
 
+    public int getConnectionId() {
+        return this.connectionId;
+    }
+
     @Override
     public void commit() throws SQLException {
 

@@ -16,7 +16,6 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -89,7 +88,8 @@ class Jfr4JdbcDriverTest {
             fr.stop();
         }
 
-        List<RecordedEvent> connectionEvents = fr.getEvents().stream().filter(e -> e.getEventType().getLabel().equals("Connection")).collect(Collectors.toList());
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
         assertEquals(1, connectionEvents.size());
         RecordedEvent connectionEvent = connectionEvents.get(0);
         assertEquals(connectionEvent.getString("dataSourceClass"), null);
@@ -98,6 +98,59 @@ class Jfr4JdbcDriverTest {
         assertEquals(DELEGATE_URL, connectionEvent.getString("url"));
     }
 
+    @DisplayName("getConnection to create ConnectionEvent throw exception as expected")
+    @Test
+    void getConnectionConnectEventThrowSQLException() throws Exception {
+        when(delegateDriver.connect(DELEGATE_URL, null)).thenThrow(new SQLException());
+
+        Driver driver = DriverManager.getDriver(URL);
+        FlightRecording fr = FlightRecording.start();
+        try (Connection con = driver.connect(URL, null)) {
+            fail();
+        } catch (SQLException e) {
+
+        } catch (Exception e) {
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertEquals(connectionEvent.getString("dataSourceClass"), null);
+        assertEquals(connectionEvent.getString("connectionClass"), null);
+        assertEquals(connectionEvent.getInt("connectionId"), 0);
+        assertEquals(DELEGATE_URL, connectionEvent.getString("url"));
+    }
+
+    @DisplayName("getConnection to create ConnectionEvent throw exception as unexpected")
+    @Test
+    void getConnectionConnectEventThrowRuntimeException() throws Exception {
+        when(delegateDriver.connect(DELEGATE_URL, null)).thenThrow(new RuntimeException());
+
+        Driver driver = DriverManager.getDriver(URL);
+        FlightRecording fr = FlightRecording.start();
+        try (Connection con = driver.connect(URL, null)) {
+            fail();
+        } catch (RuntimeException e) {
+
+        } catch (Exception e) {
+            fail();
+        } finally {
+            fr.stop();
+        }
+
+        // Connection Event
+        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        assertEquals(1, connectionEvents.size());
+        RecordedEvent connectionEvent = connectionEvents.get(0);
+        assertEquals(connectionEvent.getString("dataSourceClass"), null);
+        assertEquals(connectionEvent.getString("connectionClass"), null);
+        assertEquals(connectionEvent.getInt("connectionId"), 0);
+        assertEquals(DELEGATE_URL, connectionEvent.getString("url"));
+    }
 
     @DisplayName("notGetConnection")
     @Test

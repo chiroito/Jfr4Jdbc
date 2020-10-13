@@ -1,8 +1,5 @@
 package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.event.jfr.JfrCloseEvent;
-import dev.jfr4jdbc.event.jfr.JfrCommitEvent;
-import dev.jfr4jdbc.event.jfr.JfrRollbackEvent;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,16 +7,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,10 +41,54 @@ class JfrConnectionTest {
         connection.commit();
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrCommitEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Commit");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(event.getInt("connectionId") > 0);
+    }
+
+    @DisplayName("create CommitEvent throw exception as expected")
+    @Test
+    void createCommitEventThrowSQLException() throws Exception {
+        Mockito.doThrow(new SQLException()).when(delegatedCon).commit();
+
+        JfrConnection connection = new JfrConnection(this.delegatedCon);
+        FlightRecording fr = FlightRecording.start();
+        try {
+            connection.commit();
+            fail();
+        } catch (SQLException e) {
+
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Commit");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+    }
+
+    @DisplayName("create CommitEvent throw exception as unexpected")
+    @Test
+    void createCommitEventThrowRuntimeException() throws Exception {
+        Mockito.doThrow(new RuntimeException()).when(delegatedCon).commit();
+
+        JfrConnection connection = new JfrConnection(this.delegatedCon);
+        FlightRecording fr = FlightRecording.start();
+        try {
+            connection.commit();
+            fail();
+        } catch (RuntimeException e) {
+
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Commit");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
     }
 
     @DisplayName("create RollbackEvent")
@@ -59,10 +99,54 @@ class JfrConnectionTest {
         connection.rollback();
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrRollbackEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Rollback");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertTrue(event.getInt("connectionId") > 0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+    }
+
+    @DisplayName("create RollbackEvent throw exception as expected")
+    @Test
+    void createRollbackEventThrowSQLException() throws Exception {
+        Mockito.doThrow(new SQLException()).when(delegatedCon).rollback();
+
+        JfrConnection connection = new JfrConnection(this.delegatedCon);
+        FlightRecording fr = FlightRecording.start();
+        try {
+            connection.rollback();
+            fail();
+        } catch (SQLException e) {
+
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Rollback");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+    }
+
+    @DisplayName("create RollbackEvent throw exception as unexpected")
+    @Test
+    void createRollbackEventThrowRuntimeException() throws Exception {
+        Mockito.doThrow(new RuntimeException()).when(delegatedCon).rollback();
+
+        JfrConnection connection = new JfrConnection(this.delegatedCon);
+        FlightRecording fr = FlightRecording.start();
+        try {
+            connection.rollback();
+            fail();
+        } catch (RuntimeException e) {
+
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Rollback");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
     }
 
     @DisplayName("create CloseEvent")
@@ -73,10 +157,54 @@ class JfrConnectionTest {
         connection.close();
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrCloseEvent.class.getName())).collect(Collectors.toList());
+        List<RecordedEvent> events = fr.getEvents("Close");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertTrue(event.getInt("connectionId") > 0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+    }
+
+    @DisplayName("create CloseEvent throw exception as expected")
+    @Test
+    void createCloseEventThrowSQLException() throws Exception {
+        Mockito.doThrow(new SQLException()).when(delegatedCon).close();
+
+        JfrConnection connection = new JfrConnection(this.delegatedCon);
+        FlightRecording fr = FlightRecording.start();
+        try {
+            connection.close();
+            fail();
+        } catch (SQLException e) {
+
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Close");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+    }
+
+    @DisplayName("create CloseEvent throw exception as unexpected")
+    @Test
+    void createCloseEventThrowRuntimeException() throws Exception {
+        Mockito.doThrow(new RuntimeException()).when(delegatedCon).close();
+
+        JfrConnection connection = new JfrConnection(this.delegatedCon);
+        FlightRecording fr = FlightRecording.start();
+        try {
+            connection.close();
+            fail();
+        } catch (RuntimeException e) {
+
+        } finally {
+            fr.stop();
+        }
+
+        List<RecordedEvent> events = fr.getEvents("Close");
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
     }
 
     @Test

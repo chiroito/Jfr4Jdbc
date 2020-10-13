@@ -9,4 +9,8 @@ public class Jfr4JdbcTestRuntimeException extends RuntimeException {
     public Jfr4JdbcTestRuntimeException(String message) {
         super(message);
     }
+
+    public Jfr4JdbcTestRuntimeException(Exception e) {
+        super(e);
+    }
 }

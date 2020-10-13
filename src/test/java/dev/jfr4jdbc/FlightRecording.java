@@ -8,6 +8,7 @@ import jdk.jfr.consumer.RecordingFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FlightRecording {
 
@@ -59,6 +60,14 @@ public class FlightRecording {
     public List<RecordedEvent> getEvents() throws Jfr4jdbcTestException {
         try {
             return RecordingFile.readAllEvents(this.dumpFilePath);
+        } catch (Exception e) {
+            throw new Jfr4jdbcTestException(e);
+        }
+    }
+
+    public List<RecordedEvent> getEvents(String eventName) throws Jfr4jdbcTestException {
+        try {
+            return RecordingFile.readAllEvents(this.dumpFilePath).stream().filter(e -> e.getEventType().getLabel().equals(eventName)).collect(Collectors.toList());
         } catch (Exception e) {
             throw new Jfr4jdbcTestException(e);
         }
