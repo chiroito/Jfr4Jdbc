@@ -41,6 +41,10 @@ public class Jfr4JdbcDriver implements Driver {
         super();
     }
 
+    Jfr4JdbcDriver(Driver driver) {
+        this.delegateJdbcDriver = driver;
+    }
+
     @Override
     public boolean acceptsURL(String url) throws SQLException {
 
@@ -51,7 +55,7 @@ public class Jfr4JdbcDriver implements Driver {
 
         // Checking whether the driver is present.
         String delegeteJdbcDriverUrl = Jfr4JdbcDriver.getDelegateUrl(url);
-        Driver delegateDriver = DriverManager.getDriver(delegeteJdbcDriverUrl);
+        Driver delegateDriver = (this.delegateJdbcDriver == null) ? DriverManager.getDriver(delegeteJdbcDriverUrl) : this.delegateJdbcDriver;
 
         if (delegateDriver == null) {
             return false;
@@ -69,7 +73,7 @@ public class Jfr4JdbcDriver implements Driver {
 
         // Get a delegated Driver
         String delegeteUrl = Jfr4JdbcDriver.getDelegateUrl(url);
-        Driver delegateDriver = DriverManager.getDriver(delegeteUrl);
+        Driver delegateDriver = (this.delegateJdbcDriver == null) ? DriverManager.getDriver(delegeteUrl) : this.delegateJdbcDriver;
         if (delegateDriver == null) {
             return null;
         }

@@ -18,7 +18,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class Jfr4JdbcDriverTest {
@@ -27,16 +28,19 @@ class Jfr4JdbcDriverTest {
     public static final String DELEGATE_URL = "jdbc:xxx";
     private static final String NOT_FOUND_URL = "jdbc:jfr:yyy";
 
-    private static Driver delegateDriver;
+    @Mock
+    private Driver delegateDriver;
 
     @Mock
     private Connection delegatedCon;
 
     @BeforeAll
     static void initClass() throws Exception {
-        delegateDriver = Mockito.mock(Driver.class);
         try {
-            DriverManager.registerDriver(delegateDriver);
+            Driver mockDriver = Mockito.mock(Driver.class);
+            when(mockDriver.acceptsURL(DELEGATE_URL)).thenReturn(true);
+            when(mockDriver.acceptsURL(URL)).thenReturn(false);
+            DriverManager.registerDriver(mockDriver);
         } catch (SQLException e) {
             throw new RuntimeException("Could not register Jfr4Jdbc.", e);
         }
@@ -45,8 +49,6 @@ class Jfr4JdbcDriverTest {
     @BeforeEach
     void init() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(delegateDriver.acceptsURL(DELEGATE_URL)).thenReturn(true);
-        when(delegateDriver.acceptsURL(URL)).thenReturn(false);
     }
 
     @DisplayName("getDriver")
@@ -61,14 +63,14 @@ class Jfr4JdbcDriverTest {
     void getConnection() throws Exception {
         when(delegateDriver.connect(DELEGATE_URL, null)).thenReturn(delegatedCon);
 
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         try (Connection con = driver.connect(URL, null)) {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
 
-        verify(delegateDriver, times(2)).connect(DELEGATE_URL, null);
+        verify(delegateDriver).connect(DELEGATE_URL, null);
     }
 
     @DisplayName("getConnection to create ConnectionEvent")
@@ -76,7 +78,7 @@ class Jfr4JdbcDriverTest {
     void getConnectionConnectEvent() throws Exception {
         when(delegateDriver.connect(DELEGATE_URL, null)).thenReturn(delegatedCon);
 
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         FlightRecording fr = FlightRecording.start();
         try (Connection con = driver.connect(URL, null)) {
             // do
@@ -103,7 +105,7 @@ class Jfr4JdbcDriverTest {
     void getConnectionConnectEventThrowSQLException() throws Exception {
         when(delegateDriver.connect(DELEGATE_URL, null)).thenThrow(new SQLException());
 
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         FlightRecording fr = FlightRecording.start();
         try (Connection con = driver.connect(URL, null)) {
             fail();
@@ -130,7 +132,7 @@ class Jfr4JdbcDriverTest {
     void getConnectionConnectEventThrowRuntimeException() throws Exception {
         when(delegateDriver.connect(DELEGATE_URL, null)).thenThrow(new RuntimeException());
 
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         FlightRecording fr = FlightRecording.start();
         try (Connection con = driver.connect(URL, null)) {
             fail();
@@ -170,7 +172,7 @@ class Jfr4JdbcDriverTest {
 
     @Test
     void getPropertyInfo() throws Exception {
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         driver.getPropertyInfo(URL, null);
 
         verify(this.delegateDriver).getPropertyInfo(DELEGATE_URL, null);
@@ -178,7 +180,7 @@ class Jfr4JdbcDriverTest {
 
     @Test
     void getMajorVersion() throws Exception {
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         driver.getMajorVersion();
 
         verify(this.delegateDriver).getMajorVersion();
@@ -186,7 +188,7 @@ class Jfr4JdbcDriverTest {
 
     @Test
     void getMinorVersion() throws Exception {
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         driver.getMinorVersion();
 
         verify(this.delegateDriver).getMinorVersion();
@@ -194,13 +196,13 @@ class Jfr4JdbcDriverTest {
 
     @Test
     void jdbcCompliant() throws Exception {
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         assertTrue(driver.jdbcCompliant());
     }
 
     @Test
     void getParentLogger() throws Exception {
-        Driver driver = DriverManager.getDriver(URL);
+        Driver driver = new Jfr4JdbcDriver(delegateDriver);
         driver.getParentLogger();
 
         verify(this.delegateDriver).getParentLogger();
