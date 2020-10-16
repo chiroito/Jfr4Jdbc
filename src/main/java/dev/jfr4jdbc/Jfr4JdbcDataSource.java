@@ -5,19 +5,32 @@ import dev.jfr4jdbc.event.ConnectEvent;
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public class Jfr4JdbcDataSource implements DataSource {
+
+    private static final AtomicInteger labelCounter = new AtomicInteger(0);
 
     private final DataSource datasource;
     private final int datasourceId;
     private final EventFactory factory;
 
+    private final ResourceMonitor connectionMonitor;
+
     public Jfr4JdbcDataSource(DataSource datasource) {
         this(datasource, EventFactory.getDefaultEventFactory());
     }
 
+    public Jfr4JdbcDataSource(DataSource datasource, String monitorLabel) {
+        this(datasource, EventFactory.getDefaultEventFactory(), monitorLabel);
+    }
+
     public Jfr4JdbcDataSource(DataSource datasource, EventFactory factory) {
+        this(datasource, factory, "DataSource#" + labelCounter.incrementAndGet());
+    }
+
+    public Jfr4JdbcDataSource(DataSource datasource, EventFactory factory, String monitorLabel) {
         super();
         if (datasource == null) {
             throw new Jfr4JdbcRuntimeException("No delegate DataSource");
@@ -25,6 +38,10 @@ public class Jfr4JdbcDataSource implements DataSource {
         this.datasource = datasource;
         this.datasourceId = System.identityHashCode(datasource);
         this.factory = factory;
+
+        this.connectionMonitor = new ResourceMonitor(monitorLabel);
+        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
+        manager.addMonitor(this.connectionMonitor);
     }
 
     @Override
@@ -51,7 +68,7 @@ public class Jfr4JdbcDataSource implements DataSource {
             event.commit();
         }
 
-        return new JfrConnection(delegatedCon);
+        return new JfrConnection(delegatedCon, this.connectionMonitor);
     }
 
     @Override
@@ -78,7 +95,7 @@ public class Jfr4JdbcDataSource implements DataSource {
             event.commit();
         }
 
-        return new JfrConnection(delegatedCon);
+        return new JfrConnection(delegatedCon, this.connectionMonitor);
     }
 
     @Override

@@ -11,19 +11,32 @@ import java.util.concurrent.Executor;
 
 public class JfrConnection implements Connection {
 
+    private static final ResourceMonitor connectionResourceMonitor = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor("Connection");
+
     private final Connection connection;
     private final int connectionId;
     private final EventFactory factory;
+    private final ResourceMonitor connectionMonitor;
 
     public JfrConnection(Connection con) {
-        this(con, EventFactory.getDefaultEventFactory());
+        this(con, EventFactory.getDefaultEventFactory(), connectionResourceMonitor);
     }
 
-    public JfrConnection(Connection con, EventFactory factory) {
+    public JfrConnection(Connection con, String label) {
+        this(con, EventFactory.getDefaultEventFactory(), ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor(label));
+    }
+
+    public JfrConnection(Connection con, ResourceMonitor connectionMonitor) {
+        this(con, EventFactory.getDefaultEventFactory(), connectionMonitor);
+    }
+
+    public JfrConnection(Connection con, EventFactory factory, ResourceMonitor connectionMonitor) {
         super();
         this.connection = con;
         this.connectionId = System.identityHashCode(this.connection);
         this.factory = factory;
+        this.connectionMonitor = connectionMonitor;
+        this.connectionMonitor.useResource();
     }
 
     public int getConnectionId() {
@@ -70,6 +83,7 @@ public class JfrConnection implements Connection {
             throw e;
         } finally {
             event.commit();
+            this.connectionMonitor.releaseResource();
         }
     }
 

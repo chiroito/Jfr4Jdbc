@@ -1,6 +1,7 @@
 package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.event.jfr.*;
+import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
@@ -8,7 +9,9 @@ import jdk.jfr.consumer.RecordingFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FlightRecording {
 
@@ -32,12 +35,17 @@ public class FlightRecording {
             fr.recording.enable(JfrResultSetEvent.class);
             fr.recording.enable(JfrRollbackEvent.class);
             fr.recording.enable(JfrStatementEvent.class);
+            fr.recording.disable(JfrConnectionResourceEvent.class);
             fr.recording.start();
         } catch (Exception e) {
             throw new Jfr4jdbcTestException(e);
         }
 
         return fr;
+    }
+
+    public void enable(Class<? extends Event> eventClass) {
+        this.recording.enable(eventClass);
     }
 
     public void stop() throws Jfr4jdbcTestException {
@@ -65,9 +73,13 @@ public class FlightRecording {
         }
     }
 
-    public List<RecordedEvent> getEvents(String eventName) throws Jfr4jdbcTestException {
+    public List<RecordedEvent> getEvents(String eventName, Predicate<? super RecordedEvent>... filters) throws Jfr4jdbcTestException {
         try {
-            return RecordingFile.readAllEvents(this.dumpFilePath).stream().filter(e -> e.getEventType().getLabel().equals(eventName)).collect(Collectors.toList());
+            Stream<RecordedEvent> recordedEventStream = RecordingFile.readAllEvents(this.dumpFilePath).stream().filter(e -> e.getEventType().getLabel().equals(eventName));
+            for (Predicate<? super RecordedEvent> f : filters) {
+                recordedEventStream = recordedEventStream.filter(f);
+            }
+            return recordedEventStream.collect(Collectors.toList());
         } catch (Exception e) {
             throw new Jfr4jdbcTestException(e);
         }
