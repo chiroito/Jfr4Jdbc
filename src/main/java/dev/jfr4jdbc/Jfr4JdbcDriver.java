@@ -13,9 +13,13 @@ public class Jfr4JdbcDriver implements Driver {
 
     private static final String JFR4JDBC_URL_PREFIX = "jdbc:jfr";
     private static final int JFR4JDBC_URL_PREFIX_LENGTH = JFR4JDBC_URL_PREFIX.length();
+    private static final ResourceMonitor connectionMonitor;
 
     static {
         try {
+            ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
+            connectionMonitor = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor("Connection");
+            manager.addMonitor(connectionMonitor);
             DriverManager.registerDriver(new Jfr4JdbcDriver());
         } catch (SQLException e) {
             throw new RuntimeException("Could not register Jfr4Jdbc.", e);
@@ -85,20 +89,21 @@ public class Jfr4JdbcDriver implements Driver {
         event.begin();
         Connection delegatedCon = null;
         try {
+            this.connectionMonitor.waitAssigningResource();
+
             delegatedCon = delegateDriver.connect(delegeteUrl, info);
-            if (delegatedCon != null) {
+            if (delegatedCon == null) {
+                throw new SQLException("Invalid driver url: " + url);
+            } else {
                 event.setConnectionClass(delegatedCon.getClass());
+                event.setConnectionId(System.identityHashCode(delegatedCon));
             }
         } catch (SQLException | RuntimeException e) {
-            event.commit();
             throw e;
-        }
-        if (delegatedCon == null) {
+        } finally {
+            this.connectionMonitor.assignedResource();
             event.commit();
-            throw new SQLException("Invalid driver url: " + url);
         }
-        event.setConnectionId(System.identityHashCode(delegatedCon));
-        event.commit();
 
         return new JfrConnection(delegatedCon);
     }

@@ -9,6 +9,25 @@ import jdk.jfr.StackTrace;
 @StackTrace(false)
 public class JfrConnectionResourceEvent extends JfrJdbcEvent {
 
-    public String label;
-    public int usage;
+    private final String label;
+    private final int usage;
+    private final int wait;
+
+    public JfrConnectionResourceEvent(String label, int usage, int wait) {
+        this.label = label;
+        this.usage = usage;
+        this.wait = wait;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public int getUsage() {
+        return usage;
+    }
+
+    public int getWait() {
+        return wait;
+    }
 }

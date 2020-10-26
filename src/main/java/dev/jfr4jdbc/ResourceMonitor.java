@@ -21,6 +21,7 @@ public class ResourceMonitor {
 
     private final String label;
     private final AtomicInteger usageCount = new AtomicInteger(0);
+    private final AtomicInteger waitCount = new AtomicInteger(0);
 
     public ResourceMonitor(String label) {
         this.label = label;
@@ -37,9 +38,7 @@ public class ResourceMonitor {
     static final void recordResourceMonitor(ResourceMonitorManager manager) {
         List<ResourceMonitor> monitors = manager.getMonitors();
         monitors.stream().forEach(m -> {
-            JfrConnectionResourceEvent e = new JfrConnectionResourceEvent();
-            e.label = m.getLabel();
-            e.usage = m.getUsage();
+            JfrConnectionResourceEvent e = new JfrConnectionResourceEvent(m.getLabel(), m.getUsage(), m.getWait());
             e.commit();
         });
     }
@@ -48,8 +47,20 @@ public class ResourceMonitor {
         return this.label;
     }
 
-    private int getUsage() {
+    int getUsage() {
         return this.usageCount.get();
+    }
+
+    int getWait() {
+        return this.waitCount.get();
+    }
+
+    void waitAssigningResource() {
+        this.waitCount.incrementAndGet();
+    }
+
+    void assignedResource() {
+        this.waitCount.decrementAndGet();
     }
 
     void useResource() {

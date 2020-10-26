@@ -55,6 +55,8 @@ public class Jfr4JdbcDataSource implements DataSource {
 
         Connection delegatedCon = null;
         try {
+            this.connectionMonitor.waitAssigningResource();
+
             delegatedCon = this.datasource.getConnection();
             if (delegatedCon != null) {
 
@@ -65,6 +67,7 @@ public class Jfr4JdbcDataSource implements DataSource {
         } catch (SQLException | RuntimeException e) {
             throw e;
         } finally {
+            this.connectionMonitor.assignedResource();
             event.commit();
         }
 
@@ -83,6 +86,8 @@ public class Jfr4JdbcDataSource implements DataSource {
 
         Connection delegatedCon = null;
         try {
+            this.connectionMonitor.waitAssigningResource();
+
             delegatedCon = this.datasource.getConnection(username, password);
             if (delegatedCon != null) {
                 event.setConnectionClass(delegatedCon.getClass());
@@ -92,6 +97,7 @@ public class Jfr4JdbcDataSource implements DataSource {
         } catch (SQLException | RuntimeException e) {
             throw e;
         } finally {
+            this.connectionMonitor.assignedResource();
             event.commit();
         }
 
