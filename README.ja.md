@@ -1,17 +1,37 @@
 # Jfr4Jdbc
 
-## 注意事項
-**Oracle Corporationおよび日本オラクルの製品ではありませんのでご注意ください。  
-Java Flight Recorder が必要です。Java Flight Recorder のライセンスにつきましては BCL For Java SE をご確認またはオラクルダイレクトへお問い合わせ下さい。**  
-BCL For Java SE
-http://www.oracle.com/technetwork/java/javase/terms/license/index.html  
-オラクルダイレクト
-http://www.oracle.com/jp/direct/index.html
+## 動作環境
+- JDBC 4.3 準拠
+- OpenJDK 11 以降
 
-### Jfr4Jdbc とは
-Jfr4Jdbc は JDBC のラッパーです。Jfr4Jdbc を使用することで、JDBCのイベントが Java Flight Recorder に記録されます。
+## Jfr4Jdbc とは
+Jfr4Jdbc はデータベースサーバの種類を問わず利用できる JDBC のラッパーライブラリです。
+Jfr4Jdbc を使うとユーザはシステムの性能問題が Java アプリケーションとデータベースのどちらで起きているか簡単に分かるようになります。
 
-下記のイベントが記録されます。
+Jfr4Jdbc は JDBC に対する操作をイベントとして JDK Flight Recorder (JFR) に記録します。
+この記録にかかる負荷はわずかです。
+ユーザは JFR をダンプし、そのダンプファイルを JDK Mission Control で開くと GUI でデータベース操作を確認できます。
+これによってユーザは全てのデータベース処理の問題点をグラフィカルに解析できるようになります。
+
+ユーザは JFR が有効になっているアプリケーションで、Jfr4Jdbc を依存関係に追加し、接続文字列に`jfr:`を追加するだけです。
+一部のフレームワークでは依存関係を足すだけで使えます。
+一部のデータベース接続だけを分析する場合には、Jfr4Jdbcのデータソースやコネクションオブジェクトを作成し、分析したい JDBC オブジェクトをラップします。
+
+## なにが見られるか
+
+Jfr4Jdbc を使用するとスレッドが処理しているうち、どの時間にデータベースに対する処理をしているかが分かるようになります。
+この機能によって接続、ステートメントの実行、コミットなどデータベースに対する操作のうちどの処理に時間が掛かっているかを視覚的に判断できます。
+![スレッドレーン](img/ThreadLane.png)
+
+Jfr4Jdbc を使用すると、コネクションがどれだけ使用されていて、どれくらいの数のスレッドがコネクションの割り当て待ちで処理が止まっているかを解析できます。
+これはデータソースに所属しているコネクションはデータソースごとにグループ化されます。
+これによって、どのコネクションプールが不足しているか、どのデータベースへの接続に時間が掛かっているかを特定できます。
+![リソース使用量](img/ConResource.png)
+
+## 記録されるイベント
+
+Jfr4Jdbc では下記のイベントが記録されます。
+
 - コネクションの接続
 - コネクションのクローズ
 - ステートメント
@@ -19,34 +39,10 @@ Jfr4Jdbc は JDBC のラッパーです。Jfr4Jdbc を使用することで、JD
 - コミット
 - ロールバック
 - キャンセル
+- 接続の割り当て待ち
 
-Jfr4Jdbcはデータベースサーバの種類を問わず利用可能です。
-使い方は javax.sql.DataSource を使う方法と java.sql.Driver を使う方法の 2 種類あります。  
+## 使用方法
 
-### DataSource を使う場合
-Jfr4JdbcDataSource のコンストラクタに DataSource のインスタンスを引数に与えて下さい。
-
-#### OracleDataSource を使う例：
-```java
-OracleDataSource ds = new OracleDataSource();  
-ds.setURL("jdbc:oracle:thin:user/passwd@localhost:1521:XE");  
-Jfr4jdbcDataSource jds = new Jfr4jdbcDataSource(ds);  
-Connection con = jds.getConnection();
-```
-
-### Driver を使う場合
-Jfr4JdbcDriver クラスを指定しJDBCの接続子の前の方に jfr を足すだけです。
-
-#### Driver を使う例：  
-##### 変更前  
-```java
-String url = "jdbc:oracle:thin:user/passwd@localhost:1521:XE";  
-Driver driver = DriverManager.getDriver(url);  
-Connection con = driver.connect(url, null);  
-```
-##### 変更後  
-```java
-String url = "jdbc:jfr:oracle:thin:user/passwd@localhost:1521:XE";  
-Driver driver = DriverManager.getDriver(url);  
-Connection con = driver.connect(url, null);  
-```
+- [SpringBootとの統合](doc/SpringJPA_jp.md)
+- [Quarkusとの統合](doc/Quarkus_jp.md)
+- [特定の処理だけで使う方法](doc/Wrap_jp.md)
