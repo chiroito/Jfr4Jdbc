@@ -4,33 +4,35 @@ import dev.jfr4jdbc.event.ConnectEvent;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-public class Jfr4JdbcDataSource implements DataSource {
+abstract public class Jfr4JdbcDataSource42 implements DataSource {
 
     private static final AtomicInteger labelCounter = new AtomicInteger(0);
 
-    private final DataSource datasource;
+    protected final DataSource datasource;
     private final int datasourceId;
     private final EventFactory factory;
 
     private final ResourceMonitor connectionMonitor;
 
-    public Jfr4JdbcDataSource(DataSource datasource) {
+    protected Jfr4JdbcDataSource42(DataSource datasource) {
         this(datasource, EventFactory.getDefaultEventFactory());
     }
 
-    public Jfr4JdbcDataSource(DataSource datasource, String monitorLabel) {
+    protected Jfr4JdbcDataSource42(DataSource datasource, String monitorLabel) {
         this(datasource, EventFactory.getDefaultEventFactory(), monitorLabel);
     }
 
-    public Jfr4JdbcDataSource(DataSource datasource, EventFactory factory) {
+    protected Jfr4JdbcDataSource42(DataSource datasource, EventFactory factory) {
         this(datasource, factory, "DataSource#" + labelCounter.incrementAndGet());
     }
 
-    public Jfr4JdbcDataSource(DataSource datasource, EventFactory factory, String monitorLabel) {
+    protected Jfr4JdbcDataSource42(DataSource datasource, EventFactory factory, String monitorLabel) {
         super();
         if (datasource == null) {
             throw new Jfr4JdbcRuntimeException("No delegate DataSource");
@@ -137,15 +139,5 @@ public class Jfr4JdbcDataSource implements DataSource {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return this.datasource.isWrapperFor(iface);
-    }
-
-    @Override
-    public ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
-        return this.datasource.createShardingKeyBuilder();
-    }
-
-    @Override
-    public ConnectionBuilder createConnectionBuilder() throws SQLException {
-        return this.datasource.createConnectionBuilder();
     }
 }

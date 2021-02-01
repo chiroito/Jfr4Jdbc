@@ -9,28 +9,28 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-public class JfrConnection implements Connection {
+abstract public class JfrConnection42 implements Connection {
 
     private static final ResourceMonitor connectionResourceMonitor = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor("Connection");
 
-    private final Connection connection;
+    protected final Connection connection;
     private final int connectionId;
     private final EventFactory factory;
     private final ResourceMonitor connectionMonitor;
 
-    public JfrConnection(Connection con) {
+    protected JfrConnection42(Connection con) {
         this(con, EventFactory.getDefaultEventFactory(), connectionResourceMonitor);
     }
 
-    public JfrConnection(Connection con, String label) {
+    protected JfrConnection42(Connection con, String label) {
         this(con, EventFactory.getDefaultEventFactory(), ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor(label));
     }
 
-    public JfrConnection(Connection con, ResourceMonitor connectionMonitor) {
+    protected JfrConnection42(Connection con, ResourceMonitor connectionMonitor) {
         this(con, EventFactory.getDefaultEventFactory(), connectionMonitor);
     }
 
-    public JfrConnection(Connection con, EventFactory factory, ResourceMonitor connectionMonitor) {
+    protected JfrConnection42(Connection con, EventFactory factory, ResourceMonitor connectionMonitor) {
         super();
         this.connection = con;
         this.connectionId = System.identityHashCode(this.connection);
@@ -353,35 +353,5 @@ public class JfrConnection implements Connection {
     @Override
     public int getNetworkTimeout() throws SQLException {
         return this.connection.getNetworkTimeout();
-    }
-
-    @Override
-    public void beginRequest() throws SQLException {
-        this.connection.beginRequest();
-    }
-
-    @Override
-    public void endRequest() throws SQLException {
-        this.connection.endRequest();
-    }
-
-    @Override
-    public boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout) throws SQLException {
-        return this.connection.setShardingKeyIfValid(shardingKey, timeout);
-    }
-
-    @Override
-    public boolean setShardingKeyIfValid(ShardingKey shardingKey, ShardingKey superShardingKey, int timeout) throws SQLException {
-        return this.connection.setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
-    }
-
-    @Override
-    public void setShardingKey(ShardingKey shardingKey) throws SQLException {
-        this.connection.setShardingKey(shardingKey);
-    }
-
-    @Override
-    public void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey) throws SQLException {
-        this.connection.setShardingKey(shardingKey, superShardingKey);
     }
 }

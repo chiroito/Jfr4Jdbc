@@ -303,20 +303,4 @@ class Jfr4JdbcDataSourceTest {
 
         verify(delegatedDs).isWrapperFor(null);
     }
-
-    @Test
-    void createConnectionBuilder() throws Exception {
-        Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
-        dataSource.createConnectionBuilder();
-
-        verify(delegatedDs).createConnectionBuilder();
-    }
-
-    @Test
-    void createShardingKeyBuilder() throws Exception {
-        Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
-        dataSource.createShardingKeyBuilder();
-
-        verify(delegatedDs).createShardingKeyBuilder();
-    }
 }

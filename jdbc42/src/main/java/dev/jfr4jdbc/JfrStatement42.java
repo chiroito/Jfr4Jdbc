@@ -5,18 +5,18 @@ import dev.jfr4jdbc.event.StatementEvent;
 
 import java.sql.*;
 
-public class JfrStatement implements Statement {
+abstract public class JfrStatement42 implements Statement {
 
     private final EventFactory factory;
     protected final Statement jdbcStatement;
     private final int statementId;
     private StringBuilder batchSql;
 
-    public JfrStatement(Statement s) {
+    protected JfrStatement42(Statement s) {
         this(s, EventFactory.getDefaultEventFactory());
     }
 
-    public JfrStatement(Statement s, EventFactory factory) {
+    protected JfrStatement42(Statement s, EventFactory factory) {
         super();
         this.jdbcStatement = s;
         this.statementId = System.identityHashCode(s);
@@ -498,25 +498,5 @@ public class JfrStatement implements Statement {
     @Override
     public long executeLargeUpdate(String sql, String[] columnNames) throws SQLException {
         return this.jdbcStatement.executeLargeUpdate(sql, columnNames);
-    }
-
-    @Override
-    public String enquoteLiteral(String val) throws SQLException {
-        return this.jdbcStatement.enquoteLiteral(val);
-    }
-
-    @Override
-    public String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
-        return this.jdbcStatement.enquoteIdentifier(identifier, alwaysQuote);
-    }
-
-    @Override
-    public boolean isSimpleIdentifier(String identifier) throws SQLException {
-        return this.jdbcStatement.isSimpleIdentifier(identifier);
-    }
-
-    @Override
-    public String enquoteNCharLiteral(String val) throws SQLException {
-        return this.jdbcStatement.enquoteNCharLiteral(val);
     }
 }

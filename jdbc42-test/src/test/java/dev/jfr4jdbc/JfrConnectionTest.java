@@ -234,60 +234,6 @@ class JfrConnectionTest {
     }
 
     @Test
-    void beginRequest() throws SQLException {
-        try (Connection con = new JfrConnection(this.delegatedCon)) {
-            con.beginRequest();
-        }
-
-        verify(this.delegatedCon).beginRequest();
-    }
-
-    @Test
-    void endRequest() throws SQLException {
-        try (Connection con = new JfrConnection(this.delegatedCon)) {
-            con.endRequest();
-        }
-
-        verify(this.delegatedCon).endRequest();
-    }
-
-    @Test
-    void setShardingKeyIfValid() throws SQLException {
-        try (Connection con = new JfrConnection(this.delegatedCon)) {
-            con.setShardingKeyIfValid(null, 0);
-        }
-
-        verify(this.delegatedCon).setShardingKeyIfValid(null, 0);
-    }
-
-    @Test
-    void setShardingKeyIfValid1() throws SQLException {
-        try (Connection con = new JfrConnection(this.delegatedCon)) {
-            con.setShardingKeyIfValid(null, null, 0);
-        }
-
-        verify(this.delegatedCon).setShardingKeyIfValid(null, null, 0);
-    }
-
-    @Test
-    void setShardingKey() throws SQLException {
-        try (Connection con = new JfrConnection(this.delegatedCon)) {
-            con.setShardingKey(null);
-        }
-
-        verify(this.delegatedCon).setShardingKey(null);
-    }
-
-    @Test
-    void setShardingKey1() throws SQLException {
-        try (Connection con = new JfrConnection(this.delegatedCon)) {
-            con.setShardingKey(null, null);
-        }
-
-        verify(this.delegatedCon).setShardingKey(null, null);
-    }
-
-    @Test
     void prepareStatement() throws SQLException {
         try (Connection con = new JfrConnection(this.delegatedCon)) {
             con.prepareStatement(null);
