@@ -2,102 +2,71 @@
 
 Spring JPA で Jfr4Jdbc を使用するには以下の 2 つの使用方法があります。
 
-- A. HikariDataSource を Jfr4Jdbc でラップする方法
-- B. Connection の実装クラスを Jfr4Jdbc でラップする方法
+- A. Jfr4Jdbc-SpringBoot を使用する方法
+- B. コネクションの設定を変更する方法
 
-お奨めは前者です。どちらの方法でもJfr4Jdbcへの依存関係の追加が必要です。
+お奨めは前者です。
 
-### 依存関係の追加
+### Javaの起動オプション
 
-Jfr4Jdbcのクラスを読込めるようにするため`pom.xml`に依存関係を追加します。最終的に接続するRDBMSのJDBCドライバも必要になります。
+AとBどちらの方法にするにしてもJavaでJDK Flight Recorder(JFR)を有効にします。JFRはJava 8 update 262以降か、Java 11以降で使用できます。JavaプロセスのVM引数に以下のような起動オプションを追加します。
+
+```
+-XX:StartFlightRecording=dumponexit=true,filename=dump.jfr
+```
+
+これでJFRが有効になりプロセスの終了後に`dump.jfr`というファイルが作成されます。
+
+## A. Jfr4Jdbc-SpringBoot を使用する方法
+
+最も簡単にSpringBootでJfr4Jdbcを使う方法です。自動構成によってデータソースをJfr4Jdbcのデータソースでラップします。
+
+使用方法は既存のアプリケーションの`pom.xml`に以下のようなJfr4Jdbc-SpringBootの依存関係を追加するだけです。
 
 ```xml
 <dependency>
-    <groupId>dev</groupId>
-    <artifactId>jfr4jdbc</artifactId>
+    <groupId>dev.jfr4jdbc</groupId>
+    <artifactId>jfr4jdbc-springboot</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
 
-## A. HikariDataSource を Jfr4Jdbc でラップする方法
+## B. コネクションの設定を変更する方法
 
-この方法では`HikariDataSource`を`Jfr4JdbcDataSource`でラップします。これによって、DataSourceから取り出される全てのコネクションは Jfr4Jdbc にラップされます。そのため、この方法では JDBC の URL の変更や、ドライバの変更は不要です。
+Aの方法でSpringBootの自動構成がうまくいかない場合などはこちらの方法をご利用ください。コネクションの設定
 
-JfrDataSourceConfiguration.java
-```java
-import com.zaxxer.hikari.HikariDataSource;
-import dev.jfr4jdbc.Jfr4JdbcDataSource;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.util.StringUtils;
+Spring JPA で Jfr4Jdbc を使用するには以下の 3 つのステップが必要です。
 
-import javax.sql.DataSource;
-
-@Configuration
-public class JfrDataSourceConfiguration {
-
-    @ConditionalOnClass({HikariDataSource.class})
-    @ConditionalOnProperty(
-            name = {"spring.datasource.type"},
-            havingValue = "com.zaxxer.hikari.HikariDataSource",
-            matchIfMissing = true
-    )
-    static class JfrDataSource {
-        JfrDataSource() {
-        }
-
-        @Bean
-        @ConfigurationProperties(
-                prefix = "spring.datasource.hikari"
-        )
-        DataSource dataSource(DataSourceProperties properties) {
-            HikariDataSource dataSource = (HikariDataSource) JfrDataSourceConfiguration.createDataSource(properties, HikariDataSource.class);
-            if (StringUtils.hasText(properties.getName())) {
-                dataSource.setPoolName(properties.getName());
-            }
-            return new Jfr4JdbcDataSource(dataSource);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    protected static <T> T createDataSource(DataSourceProperties properties, Class<? extends DataSource> type) {
-        return (T) properties.initializeDataSourceBuilder().type(type).build();
-    }
-}
-```
-設定ファイルは以下のとおり何も変更は必要ありません。
-
-
-application.properties
-```properties
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
-```
-
-`HikariDataSource を Jfr4Jdbc でラップする方法`は以上で完了です。
-
-## B. Connection の実装クラスを Jfr4Jdbc でラップする方法
-
-Spring JPA で Jfr4Jdbc を使用するには以下の 2 つのステップが必要です。
-
+1. Jfr4Jdbcの依存関係を追加
 1. Driverクラスの変更
 1. URL の修正
 
-### B-1. Driverクラスの変更
+### B-1. Jfr4Jdbcの依存関係を追加
+
+SpringBootでJfr4Jdbcを使えるようにします。これによってJfr4JdbcのJDBCドライバなどが使えるようになります。
+
+アプリケーションの`pom.xml`に以下の依存関係を追加します。
+
+```xml
+<dependency>
+    <groupId>dev.jfr4jdbc</groupId>
+    <artifactId>jfr4jdbc-driver</artifactId>
+    <version>1.1.0</version>
+</dependency>
+```
+
+
+### B-2. Driverクラスの変更
 Spring JPA が使用するDriverクラスをJfr4JdbcのDriverクラスに変更します。
 `application.properties`ファイルで`spring.datasource.driver-class-name`に`dev.jfr4jdbc.Jfr4JdbcDriver`を指定します。最終的に接続するRDBMSのDriverクラスはJfr4Jdbcが自動的に読み込みます。
 ```properties
 spring.datasource.driver-class-name=dev.jfr4jdbc.Jfr4JdbcDriver
 ```
 
-### B-2. URL の修正
+### B-3. URL の修正
 
-JDBCのURLに`jfr:`を追加して、DriverがJfr4Jdbcのコネクションを生成できるようにします。。
-`application.properties`ファイルで`spring.datasource.url`の`jdbc:<DBドライバ名>`に`jfr:`を追加して、`jdbc:jfr:<DBドライバ名>`とします。最終的に接続するRDBMSのURLは`jfr:`が取り除かれたURLになります。
+URLから使用するJDBCドライバを決定するため、JDBCのURLに`jfr:`を追加します。これで、DriverがJfr4Jdbcのコネクションを生成できるようにします。。
+`application.properties`ファイルで`spring.datasource.url`の`jdbc:<DBドライバ名>`に`jfr:`を挿入して、`jdbc:jfr:<DBドライバ名>`とします。最終的に接続するRDBMSのURLは`jfr:`が取り除かれたURLになります。
 
 既存のURL例
 ```properties
@@ -108,4 +77,4 @@ spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
 spring.datasource.url=jdbc:jfr:postgresql://localhost:5432/postgres
 ```
 
-`Connection の実装クラスを Jfr4Jdbc でラップする方法`は以上で完了です。
+`コネクションの設定を変更する方法`は以上で完了です。
