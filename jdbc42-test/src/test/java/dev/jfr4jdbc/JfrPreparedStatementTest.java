@@ -50,6 +50,21 @@ class JfrPreparedStatementTest {
         assertTrue(event.getBoolean("prepared"));
     }
 
+    @DisplayName("create StatementEvent by executeQuery with Null Param")
+    @Test
+    void createStatementEventByExecuteQueryWithNullParam() throws Exception {
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
+        statement.setString(0, null);
+        FlightRecording fr = FlightRecording.start();
+        statement.executeQuery();
+        fr.stop();
+
+        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(event.getBoolean("prepared"));
+    }
+
     @DisplayName("return JfrResultSet by executeQuery")
     @Test
     void returnJfrResultSetByExecuteQuery() throws Exception {
@@ -73,10 +88,40 @@ class JfrPreparedStatementTest {
         assertTrue(event.getBoolean("prepared"));
     }
 
+    @DisplayName("create StatementEvent by executeUpdate with Null Param")
+    @Test
+    void createStatementEventByExecuteUpdateWithNullParam() throws Exception {
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
+        statement.setString(0, null);
+        FlightRecording fr = FlightRecording.start();
+        statement.executeUpdate();
+        fr.stop();
+
+        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(event.getBoolean("prepared"));
+    }
+
     @DisplayName("create StatementEvent by execute")
     @Test
     void createStatementEventByExecute() throws Exception {
         JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
+        FlightRecording fr = FlightRecording.start();
+        statement.execute();
+        fr.stop();
+
+        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        assertEquals(1, events.size());
+        RecordedEvent event = events.get(0);
+        assertTrue(event.getBoolean("prepared"));
+    }
+
+    @DisplayName("create StatementEvent by execute with Null Param")
+    @Test
+    void createStatementEventByExecuteWithNullParam() throws Exception {
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
+        statement.setString(0, null);
         FlightRecording fr = FlightRecording.start();
         statement.execute();
         fr.stop();
