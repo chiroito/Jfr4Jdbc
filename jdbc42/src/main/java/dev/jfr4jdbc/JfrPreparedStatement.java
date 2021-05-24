@@ -30,7 +30,7 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     }
 
     private String parameterToString() {
-        String parameterStr = this.parameters.stream().map(p -> String.format("%d=%s", p.index, p.value.toString())).collect(Collectors.joining(", "));
+        String parameterStr = this.parameters.stream().map(p -> String.format("%d=%s", p.index, (p.value == null) ? "null" : p.value.toString())).collect(Collectors.joining(", "));
         return parameterStr;
     }
 
