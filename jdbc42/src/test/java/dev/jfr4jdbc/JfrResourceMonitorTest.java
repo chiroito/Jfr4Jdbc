@@ -246,6 +246,7 @@ public class JfrResourceMonitorTest {
         fr.stop();
 
         List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
+        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         assertEquals(6, events.size());
         RecordedEvent e1 = events.get(0);
         assertEquals(0, e1.getInt("wait"));

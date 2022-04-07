@@ -2,14 +2,14 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>project</artifactId>
-        <groupId>dev.jfr4jdbc</groupId>
-        <version>1.1.0</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>dev.jfr4jdbc</groupId>
     <artifactId>jfr4jdbc-driver</artifactId>
+    <version>1.3.0</version>
+    <name>jfr4jdbc</name>
+    <description>A JDBC wrapper driver recording JDK Flight Recorder events</description>
+    <url>https://github.com/chiroito/Jfr4Jdbc</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -17,6 +17,31 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:https://github.com/chiroito/Jfr4Jdbc.git</connection>
+        <developerConnection>scm:git:https://github.com/chiroito/Jfr4Jdbc.git</developerConnection>
+        <url>https://github.com/chiroito/Jfr4Jdbc</url>
+    </scm>
+    <developers>
+        <developer>
+            <id>chiroito</id>
+            <name>Chihiro Ito</name>
+            <url>https://github.com/chiroito</url>
+            <roles>
+                <role>lead</role>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+            <timezone>9</timezone>
+        </developer>
+    </developers>
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -27,13 +52,30 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+
     <build>
+        <sourceDirectory>${project.basedir}/target/generated-sources/copied-java</sourceDirectory>
         <resources>
             <resource>
                 <directory>target/generated-sources/gen-resources</directory>
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.22.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -47,8 +89,8 @@
                             <target>
                                 <echo message="copy template files from ja directory"/>
                                 <property name="jdbc42_src" value="../jdbc42/src"/>
-                                <mkdir dir="target/generated-sources/gen-java"/>
-                                <copy todir="./target/generated-sources/gen-java">
+                                <mkdir dir="target/generated-sources/copied-java"/>
+                                <copy todir="./target/generated-sources/copied-java">
                                     <fileset dir="${jdbc42_src}/main/java"/>
                                 </copy>
                                 <mkdir dir="target/generated-sources/gen-resources"/>
@@ -56,8 +98,8 @@
                                     <fileset dir="${jdbc42_src}/main/resources"/>
                                 </copy>
                                 <property name="jdbc43_src" value="../jdbc43/src"/>
-                                <mkdir dir="target/generated-sources/gen-java11"/>
-                                <copy todir="./target/generated-sources/gen-java11">
+                                <mkdir dir="target/generated-sources/copied-java11"/>
+                                <copy todir="./target/generated-sources/copied-java11">
                                     <fileset dir="${jdbc43_src}/main/java"/>
                                 </copy>
                             </target>
@@ -81,8 +123,7 @@
                             <source>1.8</source>
                             <target>1.8</target>
                             <compileSourceRoots>
-                                <compileSourceRoot>${project.basedir}/target/generated-sources/gen-java
-                                </compileSourceRoot>
+                                <compileSourceRoot>${project.basedir}/target/generated-sources/copied-java</compileSourceRoot>
                             </compileSourceRoots>
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                         </configuration>
@@ -97,8 +138,7 @@
                             <source>11</source>
                             <target>11</target>
                             <compileSourceRoots>
-                                <compileSourceRoot>${project.basedir}/target/generated-sources/gen-java11
-                                </compileSourceRoot>
+                                <compileSourceRoot>${project.basedir}/target/generated-sources/copied-java11</compileSourceRoot>
                             </compileSourceRoots>
                             <outputDirectory>${project.build.outputDirectory}/META-INF/versions/11</outputDirectory>
                         </configuration>
@@ -140,7 +180,7 @@
                             <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <sourcepath>${project.basedir}/target/generated-sources/gen-java</sourcepath>
+                            <sourcepath>${project.basedir}/target/generated-sources/copied-java</sourcepath>
                         </configuration>
                     </execution>
                 </executions>
@@ -153,7 +193,7 @@
                 <configuration>
                     <serverId>ossrh</serverId>
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
                 </configuration>
             </plugin>
             <plugin>
