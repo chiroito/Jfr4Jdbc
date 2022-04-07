@@ -4,55 +4,17 @@
 
     <groupId>dev.jfr4jdbc</groupId>
     <artifactId>project</artifactId>
-    <version>1.1.0</version>
+    <version>1.3.0</version>
 
     <modules>
         <module>jdbc42</module>
         <module>jdbc43</module>
-        <module>jfr4jdbc-driver</module>
-        <module>jdbc42-test</module>
-        <module>jdbc43-test</module>
+<!--        <module>jfr4jdbc-driver</module>-->
     </modules>
     <packaging>pom</packaging>
 
     <name>jfr4jdbc</name>
-    <description>A JDBC wrapper driver recording JDK Flight Recorder events</description>
-    <url>https://github.com/chiroito/Jfr4Jdbc</url>
-    <licenses>
-        <license>
-            <name>Apache License 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-    <scm>
-        <connection>scm:git:https://github.com/chiroito/Jfr4Jdbc.git</connection>
-        <developerConnection>scm:git:https://github.com/chiroito/Jfr4Jdbc.git</developerConnection>
-        <url>https://github.com/chiroito/Jfr4Jdbc</url>
-    </scm>
-    <developers>
-        <developer>
-            <id>chiroito</id>
-            <name>Chihiro Ito</name>
-            <url>https://github.com/chiroito</url>
-            <roles>
-                <role>lead</role>
-                <role>architect</role>
-                <role>developer</role>
-            </roles>
-            <timezone>9</timezone>
-        </developer>
-    </developers>
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -60,6 +22,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.22.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -69,40 +36,19 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>dev.jfr4jdbc</groupId>
-                <artifactId>jfr4jdbc42-driver</artifactId>
-                <version>${project.version}</version>
-                <type>jar</type>
-            </dependency>
-            <dependency>
-                <groupId>dev.jfr4jdbc</groupId>
-                <artifactId>jfr4jdbc43-driver</artifactId>
-                <version>${project.version}</version>
-                <type>jar</type>
-            </dependency>
-            <dependency>
-                <groupId>dev.jfr4jdbc</groupId>
-                <artifactId>jfr4jdbc-driver</artifactId>
-                <version>${project.version}</version>
-                <type>jar</type>
-            </dependency>
-            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>5.5.1</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>5.5.1</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
                 <version>3.0.0</version>
-                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
