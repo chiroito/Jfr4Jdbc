@@ -59,13 +59,18 @@ public class Jfr4JdbcDriver implements Driver {
 
         // Checking whether the driver is present.
         String delegeteJdbcDriverUrl = Jfr4JdbcDriver.getDelegateUrl(url);
-        Driver delegateDriver = (this.delegateJdbcDriver == null) ? DriverManager.getDriver(delegeteJdbcDriverUrl) : this.delegateJdbcDriver;
-
-        if (delegateDriver == null) {
-            return false;
+        Driver delegateDriver;
+        if (this.delegateJdbcDriver == null) {
+            try {
+                delegateDriver = DriverManager.getDriver(delegeteJdbcDriverUrl);
+            } catch (SQLException e) {
+                delegateDriver = null;
+            }
+        } else {
+            delegateDriver = this.delegateJdbcDriver;
         }
 
-        return true;
+        return delegateDriver != null;
     }
 
     @Override

@@ -157,11 +157,8 @@ class Jfr4JdbcDriverTest {
     @DisplayName("notGetConnection")
     @Test
     void notGetConnection() {
-        try {
-            DriverManager.getDriver(NOT_FOUND_URL);
-            fail();
-        } catch (SQLException e) {
-        }
+        assertThrows(SQLException.class, () -> DriverManager.getDriver("jdbc:yyy"));
+        assertThrows(SQLException.class, () -> DriverManager.getDriver(NOT_FOUND_URL));
     }
 
 
