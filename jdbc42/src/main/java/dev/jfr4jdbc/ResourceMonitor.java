@@ -37,7 +37,7 @@ public class ResourceMonitor {
 
     static final void recordResourceMonitor(ResourceMonitorManager manager) {
         List<ResourceMonitor> monitors = manager.getMonitors();
-        monitors.stream().forEach(m -> {
+        monitors.forEach(m -> {
             JfrConnectionResourceEvent e = new JfrConnectionResourceEvent(m.getLabel(), m.getUsage(), m.getWait());
             e.commit();
         });
