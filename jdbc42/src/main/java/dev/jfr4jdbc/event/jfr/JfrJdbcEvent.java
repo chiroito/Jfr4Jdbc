@@ -5,5 +5,5 @@ import jdk.jfr.Category;
 import jdk.jfr.Event;
 
 @Category("jdbc")
-public class JfrJdbcEvent extends Event implements JdbcEvent {
+public abstract class JfrJdbcEvent extends Event implements JdbcEvent {
 }
