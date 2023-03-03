@@ -1,6 +1,7 @@
 package dev.jfr4jdbc;
 
 import jdk.jfr.consumer.RecordedEvent;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 public class OneStopTest {
+
+    @BeforeAll
+    static void registerJfrDriver(){
+        try {
+            DriverManager.registerDriver(new Jfr4JdbcDriver());
+        }catch (SQLException e){
+            throw new Jfr4JdbcTestRuntimeException(e);
+        }
+    }
 
     @DisplayName("One stop test from data source")
     @Test
