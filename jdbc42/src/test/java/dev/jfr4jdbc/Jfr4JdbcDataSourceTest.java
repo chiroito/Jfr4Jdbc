@@ -1,9 +1,7 @@
 package dev.jfr4jdbc;
 
 import jdk.jfr.consumer.RecordedEvent;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -20,6 +18,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@TestClassOrder(ClassOrderer.OrderAnnotation.class)
+@Order(0)
 class Jfr4JdbcDataSourceTest {
 
     @Mock
@@ -46,6 +46,7 @@ class Jfr4JdbcDataSourceTest {
         }
 
         verify(delegatedDs).getConnection();
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
     }
 
     @DisplayName("getConnection to create ConnectionEvent")
@@ -54,6 +55,7 @@ class Jfr4JdbcDataSourceTest {
         when(delegatedDs.getConnection()).thenReturn(delegatedCon);
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection()) {
         } catch (Exception e) {
@@ -80,6 +82,7 @@ class Jfr4JdbcDataSourceTest {
         when(delegatedDs.getConnection()).thenThrow(new SQLException());
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection()) {
             fail();
@@ -109,6 +112,7 @@ class Jfr4JdbcDataSourceTest {
         when(delegatedDs.getConnection()).thenThrow(new RuntimeException());
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection()) {
             fail();
@@ -140,6 +144,7 @@ class Jfr4JdbcDataSourceTest {
         final String password = "PasswordY";
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         try (Connection con = dataSource.getConnection(user, password)) {
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,6 +163,7 @@ class Jfr4JdbcDataSourceTest {
         final String password = "PasswordY";
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection(user, password)) {
         } catch (Exception e) {
@@ -188,6 +194,7 @@ class Jfr4JdbcDataSourceTest {
         final String password = "PasswordY";
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection(user, password)) {
             fail();
@@ -221,6 +228,7 @@ class Jfr4JdbcDataSourceTest {
         final String password = "PasswordY";
 
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection(user, password)) {
             fail();
@@ -250,6 +258,7 @@ class Jfr4JdbcDataSourceTest {
     @Test
     void getLogWriter() throws Exception {
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.getLogWriter();
 
         verify(delegatedDs).getLogWriter();
@@ -259,6 +268,7 @@ class Jfr4JdbcDataSourceTest {
     @Test
     void setLogWriter() throws Exception {
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.setLogWriter(null);
 
         verify(delegatedDs).setLogWriter(null);
@@ -267,6 +277,7 @@ class Jfr4JdbcDataSourceTest {
     @Test
     void setLoginTimeout() throws Exception {
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.setLoginTimeout(0);
 
         verify(delegatedDs).setLoginTimeout(0);
@@ -275,6 +286,7 @@ class Jfr4JdbcDataSourceTest {
     @Test
     void getLoginTimeout() throws Exception {
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.getLoginTimeout();
 
         verify(delegatedDs).getLoginTimeout();
@@ -283,6 +295,7 @@ class Jfr4JdbcDataSourceTest {
     @Test
     void getParentLogger() throws Exception {
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.getParentLogger();
 
         verify(delegatedDs).getParentLogger();
@@ -291,6 +304,7 @@ class Jfr4JdbcDataSourceTest {
     @Test
     void unwrap() throws Exception {
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.unwrap(null);
 
         verify(delegatedDs).unwrap(null);
@@ -299,6 +313,7 @@ class Jfr4JdbcDataSourceTest {
     @Test
     void isWrapperFor() throws Exception {
         Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.isWrapperFor(null);
 
         verify(delegatedDs).isWrapperFor(null);
