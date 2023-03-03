@@ -1,8 +1,7 @@
 package dev.jfr4jdbc;
 
 import jdk.jfr.consumer.RecordedEvent;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -15,6 +14,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
+@TestClassOrder(ClassOrderer.OrderAnnotation.class)
+@Order(10)
 public class LinkageIdTest {
 
     @DisplayName("connection Id")

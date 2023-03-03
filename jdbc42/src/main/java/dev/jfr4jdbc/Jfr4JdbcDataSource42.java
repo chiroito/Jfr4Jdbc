@@ -46,6 +46,10 @@ abstract public class Jfr4JdbcDataSource42 implements DataSource {
         manager.addMonitor(this.connectionMonitor);
     }
 
+    ResourceMonitor getResourceMonitor(){
+        return this.connectionMonitor;
+    }
+
     @Override
     public Connection getConnection() throws SQLException {
 

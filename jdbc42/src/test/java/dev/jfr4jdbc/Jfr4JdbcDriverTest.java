@@ -1,10 +1,7 @@
 package dev.jfr4jdbc;
 
 import jdk.jfr.consumer.RecordedEvent;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -22,6 +19,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@TestClassOrder(ClassOrderer.OrderAnnotation.class)
+@Order(0)
 class Jfr4JdbcDriverTest {
 
     public static final String URL = "jdbc:jfr:xxx";
@@ -33,6 +32,15 @@ class Jfr4JdbcDriverTest {
 
     @Mock
     private Connection delegatedCon;
+
+//    @BeforeAll
+//    static void registerJfrDriver(){
+//        try {
+//            DriverManager.registerDriver(new Jfr4JdbcDriver());
+//        }catch (SQLException e){
+//            throw new Jfr4JdbcTestRuntimeException(e);
+//        }
+//    }
 
     @BeforeAll
     static void initClass() throws Exception {

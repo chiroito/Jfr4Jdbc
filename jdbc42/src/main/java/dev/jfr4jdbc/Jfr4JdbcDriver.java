@@ -1,6 +1,9 @@
 package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.event.ConnectEvent;
+import org.junit.jupiter.api.ClassOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.TestClassOrder;
 
 import java.sql.*;
 import java.util.Properties;

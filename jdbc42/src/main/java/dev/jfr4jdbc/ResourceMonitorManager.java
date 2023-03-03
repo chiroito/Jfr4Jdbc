@@ -25,4 +25,8 @@ public class ResourceMonitorManager {
     void addMonitor(ResourceMonitor monitor) {
         this.monitors.put(monitor.getLabel(), monitor);
     }
+
+    void removeMonitor(ResourceMonitor monitor) {
+        this.monitors.remove(monitor.getLabel());
+    }
 }

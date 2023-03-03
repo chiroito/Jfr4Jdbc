@@ -2,10 +2,7 @@ package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.event.jfr.JfrStatementEvent;
 import jdk.jfr.consumer.RecordedEvent;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -22,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
+@TestClassOrder(ClassOrderer.OrderAnnotation.class)
+@Order(2)
 class JfrPreparedStatementTest {
 
     @Mock
