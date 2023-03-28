@@ -1,0 +1,23 @@
+# Introduction
+
+To support JDBC 4.2 on Java 8 and JDBC 4.3 on Java 11, you need to build this on Java 11.
+Java 9 and 10 are no longer supported.
+
+To reduce the dependency, you need to use both pom.xml in root directory and one in jfr4jdbc-driver directory.
+
+# Test
+
+In root directory of Jfr4Jdbc, you can test this as usual.
+
+```shell
+mvn test
+```
+
+# Build
+
+In jfr4jdbc-driver directory, you can build this as multi release JAR file.
+
+```shell
+cd jfr4jdbc-driver
+mvn package
+```
