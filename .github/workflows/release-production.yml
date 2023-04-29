@@ -1,0 +1,49 @@
+name: Deploy Production
+
+on:
+  release:
+    types:
+      - published
+    tag:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        java-package: 'jdk'
+        cache: maven
+        server-id: 'ossrh'
+        server-username: OSSRH_USERNAME
+        server-password: OSSRH_PASSWORD
+        gpg-passphrase: SIGN_KEY_PASS
+        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+
+    - name: Test
+      run: mvn -B package --file pom.xml
+
+    - name: Deploy Production
+      env:
+        OSSRH_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+        OSSRH_PASSWORD: ${{ secrets.MAVEN_USER_PASSWORD }}
+        SIGN_KEY_PASS: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      run: |
+        export VERSION=`echo ${{ github.event.release.tag_name }} | awk '{print substr($0, 2)}'`
+        sed -e s/999-SNAPSHOT/${VERSION}/g jfr4jdbc-driver/pom.xml > jfr4jdbc-driver/versionedPom.xml
+        mvn -B deploy --no-transfer-progress -DskipTests --file jfr4jdbc-driver/versionedPom.xml
+        mkdir release && cp jfr4jdbc-driver/target/*.jar release
+
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: Package
+        path: release

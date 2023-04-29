@@ -4,12 +4,11 @@
 
     <groupId>dev.jfr4jdbc</groupId>
     <artifactId>project</artifactId>
-    <version>1.3.0</version>
+    <version>999-SNAPSHOT</version>
 
     <modules>
         <module>jdbc42</module>
         <module>jdbc43</module>
-<!--        <module>jfr4jdbc-driver</module>-->
     </modules>
     <packaging>pom</packaging>
 
@@ -48,7 +47,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
-                <version>3.1.0</version>
+                <version>5.1.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
