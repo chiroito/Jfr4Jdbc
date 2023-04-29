@@ -29,7 +29,7 @@ jobs:
       - name: Test
         run: mvn -B package --file pom.xml
 
-      - name: Deploy Production
+      - name: Deploy Snapshot
         env:
           OSSRH_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.MAVEN_USER_PASSWORD }}
