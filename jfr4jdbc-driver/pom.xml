@@ -6,7 +6,7 @@
 
     <groupId>dev.jfr4jdbc</groupId>
     <artifactId>jfr4jdbc-driver</artifactId>
-    <version>${jfr4jdbc.version}</version>
+    <version>999-SNAPSHOT</version>
     <name>jfr4jdbc</name>
     <description>A JDBC wrapper driver recording JDK Flight Recorder events</description>
     <url>https://github.com/chiroito/Jfr4Jdbc</url>
@@ -15,7 +15,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <jfr4jdbc.version>999-SNAPSHOT</jfr4jdbc.version>
     </properties>
 
     <licenses>

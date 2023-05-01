@@ -29,6 +29,14 @@ jobs:
       - name: Test
         run: mvn -B package --file pom.xml
 
+      - name: install Snapshot for Artifact Test
+        run: |
+          mvn -B package --no-transfer-progress -DskipTests --file jfr4jdbc-driver/pom.xml
+          mvn -B --no-transfer-progress install:install-file -Dfile=target/jfr4jdbc-driver-999-SNAPSHOT.jar -DgroupId=dev.jfr4jdbc -DartifactId=jfr4jdbc-driver -Dversion=999-SNAPSHOT -Dpackaging=jar --file jfr4jdbc-driver/pom.xml
+
+      - name: Artifact Test
+        run: mvn -B test --file artifact-test/pom.xml
+
       - name: Deploy Snapshot
         env:
           OSSRH_USERNAME: ${{ secrets.MAVEN_USERNAME }}
