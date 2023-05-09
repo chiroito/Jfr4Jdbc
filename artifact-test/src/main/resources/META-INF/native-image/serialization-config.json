@@ -1,0 +1,11 @@
+[
+  {
+    "name":"java.util.Properties"
+  },
+  {
+    "name":"java.util.Hashtable"
+  },
+  {
+    "name":"java.util.Dictionary"
+  }
+]

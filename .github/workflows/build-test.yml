@@ -1,9 +1,12 @@
+#You can run this locally like followings
+#act -W .github/workflows/build-test.yml
 name: build and test
 
 on: [pull_request]
 
 jobs:
-  build:
+# nektos/act does not support Reusable workflow and does not use Reusable workflow for development productivity
+  jvm-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,7 +18,33 @@ jobs:
       with:
         java-version: '11'
         distribution: 'temurin'
+        java-package: 'jdk'
         cache: maven
 
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+    - name: Test with Maven on JVM
+      run: bash bin/test.sh
+
+  native-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_HOST: postgres
+          POSTGRES_PASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          version: 'latest'
+          java-version: '11'
+          components: 'native-image'
+
+      - name: Test to create native image
+        run: |
+          bash bin/native-image-test.sh
+          ./artifact-test/target/artifact-test
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PASSWORD: postgres
