@@ -30,8 +30,9 @@ jobs:
       postgres:
         image: postgres
         env:
-          POSTGRES_HOST: postgres
           POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
 
     steps:
       - uses: actions/checkout@v3
@@ -46,5 +47,5 @@ jobs:
           bash bin/native-image-test.sh
           ./artifact-test/target/artifact-test
         env:
-          POSTGRES_HOST: postgres
+          POSTGRES_HOST: localhost
           POSTGRES_PASSWORD: postgres
