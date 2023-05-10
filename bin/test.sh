@@ -1,6 +1,12 @@
-#!/bin/bash
+#!/bin/bash -e
 
 export CURRENT_DIR=`pwd`
+
+function finally {
+  cd ${CURRENT_DIR}
+}
+trap finally EXIT
+
 export SCRIPT_DIR=$(cd $(dirname $0); pwd)
 export WORK_DIR=$(cd ${SCRIPT_DIR}; cd ../ ; pwd)
 
@@ -14,5 +20,3 @@ mvn -B --no-transfer-progress -DskipTests -Dgpg.skip clean install -f jfr4jdbc-d
 
 # Run artifact test
 mvn -B --no-transfer-progress test -f artifact-test/pom.xml
-
-cd ${CURRENT_DIR}
