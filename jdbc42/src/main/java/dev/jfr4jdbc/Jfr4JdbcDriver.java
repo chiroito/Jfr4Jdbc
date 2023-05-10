@@ -1,6 +1,9 @@
 package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.event.ConnectEvent;
+import dev.jfr4jdbc.internal.ResourceMonitor;
+import dev.jfr4jdbc.internal.ResourceMonitorKind;
+import dev.jfr4jdbc.internal.ResourceMonitorManager;
 
 import java.sql.*;
 import java.util.Properties;

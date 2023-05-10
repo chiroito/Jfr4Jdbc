@@ -1,8 +1,10 @@
 package dev.jfr4jdbc;
 
+import dev.jfr4jdbc.internal.Jfr4JdbcDataSource42;
+
 import javax.sql.DataSource;
 
-public class Jfr4JdbcDataSource extends Jfr4JdbcDataSource42 {
+public class Jfr4JdbcDataSource extends Jfr4JdbcDataSource42 implements DataSource{
 
     public Jfr4JdbcDataSource(DataSource datasource) {
         super(datasource);

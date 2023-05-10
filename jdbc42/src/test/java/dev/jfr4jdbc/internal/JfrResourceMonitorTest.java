@@ -1,5 +1,9 @@
-package dev.jfr4jdbc;
+package dev.jfr4jdbc.internal;
 
+import dev.jfr4jdbc.FlightRecording;
+import dev.jfr4jdbc.Jfr4JdbcDataSource;
+import dev.jfr4jdbc.JfrConnection;
+import dev.jfr4jdbc.MockJDBC;
 import dev.jfr4jdbc.event.jfr.JfrConnectionResourceEvent;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.Test;

@@ -1,5 +1,8 @@
-package dev.jfr4jdbc;
+package dev.jfr4jdbc.internal;
 
+import dev.jfr4jdbc.EventFactory;
+import dev.jfr4jdbc.Jfr4JdbcRuntimeException;
+import dev.jfr4jdbc.JfrConnection;
 import dev.jfr4jdbc.event.ConnectEvent;
 
 import javax.sql.DataSource;
@@ -46,7 +49,7 @@ abstract public class Jfr4JdbcDataSource42 implements DataSource {
         manager.addMonitor(this.connectionMonitor);
     }
 
-    ResourceMonitor getResourceMonitor(){
+    public ResourceMonitor getResourceMonitor(){
         return this.connectionMonitor;
     }
 
@@ -77,7 +80,8 @@ abstract public class Jfr4JdbcDataSource42 implements DataSource {
             event.commit();
         }
 
-        return new JfrConnection(delegatedCon, this.connectionMonitor);
+        String label = this.connectionMonitor.getLabel();
+        return new JfrConnection(delegatedCon, label);
     }
 
     @Override
@@ -107,7 +111,8 @@ abstract public class Jfr4JdbcDataSource42 implements DataSource {
             event.commit();
         }
 
-        return new JfrConnection(delegatedCon, this.connectionMonitor);
+        String label = this.connectionMonitor.getLabel();
+        return new JfrConnection(delegatedCon, label);
     }
 
     @Override

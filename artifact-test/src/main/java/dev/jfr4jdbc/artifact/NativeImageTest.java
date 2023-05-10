@@ -2,12 +2,10 @@ package dev.jfr4jdbc.artifact;
 
 import dev.jfr4jdbc.Jfr4JdbcDataSource;
 import org.postgresql.ds.PGPoolingDataSource;
-import org.postgresql.jdbc3.Jdbc3PoolingDataSource;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class NativeImageTest {
     public static void main(String[] args) throws Exception {

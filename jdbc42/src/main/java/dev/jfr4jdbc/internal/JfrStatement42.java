@@ -1,5 +1,7 @@
-package dev.jfr4jdbc;
+package dev.jfr4jdbc.internal;
 
+import dev.jfr4jdbc.EventFactory;
+import dev.jfr4jdbc.JfrResultSet;
 import dev.jfr4jdbc.event.CancelEvent;
 import dev.jfr4jdbc.event.StatementEvent;
 

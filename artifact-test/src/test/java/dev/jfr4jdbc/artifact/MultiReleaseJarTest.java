@@ -42,6 +42,14 @@ public class MultiReleaseJarTest {
         assertNotNull(jarFile.getEntry("META-INF/versions/11"));
     }
 
+    @DisplayName("Modular for Java 11")
+    @Test
+    void hasModuleInfo() throws IOException {
+        JarFile jarFile = open();
+//        assertNotNull(jarFile.getEntry("META-INF/versions/11/module-info.class"));
+        assertNotNull(jarFile.getEntry("module-info.class"));
+    }
+
     private final int JAVA_8_VERSION = 52;
     private final int JAVA_11_VERSION = 55;
 
@@ -51,7 +59,7 @@ public class MultiReleaseJarTest {
         JarFile jarFile = open();
 
         assertEquals(JAVA_8_VERSION, readMajorVersion(jarFile, "dev/jfr4jdbc/Jfr4JdbcDataSource.class"));
-        assertEquals(JAVA_8_VERSION, readMajorVersion(jarFile, "dev/jfr4jdbc/Jfr4JdbcDataSource42.class"));
+        assertEquals(JAVA_8_VERSION, readMajorVersion(jarFile, "dev/jfr4jdbc/internal/Jfr4JdbcDataSource42.class"));
     }
 
     @DisplayName("Classes for JDBC 4.3 exists")
@@ -60,7 +68,7 @@ public class MultiReleaseJarTest {
         JarFile jarFile = open();
 
         assertEquals(JAVA_11_VERSION, readMajorVersion(jarFile, "META-INF/versions/11/dev/jfr4jdbc/Jfr4JdbcDataSource.class"));
-        assertEquals(JAVA_11_VERSION, readMajorVersion(jarFile, "META-INF/versions/11/dev/jfr4jdbc/Jfr4JdbcDataSource43.class"));
+        assertEquals(JAVA_11_VERSION, readMajorVersion(jarFile, "META-INF/versions/11/dev/jfr4jdbc/internal/Jfr4JdbcDataSource43.class"));
     }
 
 

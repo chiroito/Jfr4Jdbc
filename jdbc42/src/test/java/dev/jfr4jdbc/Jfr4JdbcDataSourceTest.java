@@ -1,5 +1,7 @@
 package dev.jfr4jdbc;
 
+import dev.jfr4jdbc.internal.ResourceMonitorKind;
+import dev.jfr4jdbc.internal.ResourceMonitorManager;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;

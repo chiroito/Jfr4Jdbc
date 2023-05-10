@@ -1,4 +1,6 @@
-package dev.jfr4jdbc;
+package dev.jfr4jdbc.internal;
+
+import dev.jfr4jdbc.EventFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;

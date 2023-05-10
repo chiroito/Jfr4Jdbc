@@ -1,4 +1,4 @@
-package dev.jfr4jdbc;
+package dev.jfr4jdbc.internal;
 
 import dev.jfr4jdbc.event.jfr.JfrConnectionResourceEvent;
 import jdk.jfr.FlightRecorder;
@@ -35,7 +35,7 @@ public class ResourceMonitor {
         isRecord = true;
     }
 
-    static final void recordResourceMonitor(ResourceMonitorManager manager) {
+    public static final void recordResourceMonitor(ResourceMonitorManager manager) {
         List<ResourceMonitor> monitors = manager.getMonitors();
         monitors.forEach(m -> {
             JfrConnectionResourceEvent e = new JfrConnectionResourceEvent(m.getLabel(), m.getUsage(), m.getWait());
@@ -43,31 +43,31 @@ public class ResourceMonitor {
         });
     }
 
-    String getLabel() {
+    public String getLabel() {
         return this.label;
     }
 
-    int getUsage() {
+    public int getUsage() {
         return this.usageCount.get();
     }
 
-    int getWait() {
+    public int getWait() {
         return this.waitCount.get();
     }
 
-    void waitAssigningResource() {
+    public void waitAssigningResource() {
         this.waitCount.incrementAndGet();
     }
 
-    void assignedResource() {
+    public void assignedResource() {
         this.waitCount.decrementAndGet();
     }
 
-    void useResource() {
+    public void useResource() {
         this.usageCount.incrementAndGet();
     }
 
-    void releaseResource() {
+    public void releaseResource() {
         this.usageCount.decrementAndGet();
     }
 }
