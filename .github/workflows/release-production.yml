@@ -51,7 +51,7 @@ jobs:
           bash bin/native-image-test.sh
           ./artifact-test/target/artifact-test
         env:
-          POSTGRES_HOST: localhost
+          POSTGRES_HOST: postgres
           POSTGRES_PASSWORD: postgres
 
   release:
