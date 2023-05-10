@@ -88,6 +88,7 @@ public class JfrResourceMonitorTest {
         fr.stop();
 
         List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
+        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         assertEquals(3, events.size());
         RecordedEvent first = events.get(0);
         assertEquals(0, first.getInt("usage"));
@@ -115,6 +116,7 @@ public class JfrResourceMonitorTest {
         fr.stop();
 
         List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("con" + labelId));
+        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         assertEquals(2, events.size());
         RecordedEvent first = events.get(0);
         assertEquals(1, first.getInt("usage"));
@@ -144,12 +146,15 @@ public class JfrResourceMonitorTest {
         fr.stop();
 
         List<RecordedEvent> conEvents = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("con" + labelId));
+        conEvents.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         assertEquals(2, conEvents.size());
         RecordedEvent first = conEvents.get(0);
         assertEquals(1, first.getInt("usage"));
         RecordedEvent second = conEvents.get(1);
         assertEquals(0, second.getInt("usage"));
+
         List<RecordedEvent> dsEvents = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
+        dsEvents.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         assertEquals(3, dsEvents.size());
         RecordedEvent dsFirst = dsEvents.get(0);
         assertEquals(0, dsFirst.getInt("usage"));
@@ -193,6 +198,7 @@ public class JfrResourceMonitorTest {
         fr.stop();
 
         List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
+        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         assertEquals(4, events.size());
         RecordedEvent first = events.get(0);
         assertEquals(0, first.getInt("wait"));
@@ -266,6 +272,7 @@ public class JfrResourceMonitorTest {
         assertTrue(e6.getInt("wait") <= 2);
 
         List<RecordedEvent> events2 = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId + "_2"));
+        events2.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
         assertEquals(6, events2.size());
         RecordedEvent f1 = events2.get(0);
         assertEquals(0, f1.getInt("wait"));
