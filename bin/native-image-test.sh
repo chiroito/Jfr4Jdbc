@@ -16,4 +16,4 @@ cd ${WORK_DIR}
 mvn -B --no-transfer-progress -DskipTests -Dgpg.skip clean install -f jfr4jdbc-driver/pom.xml
 
 # Run native-imaging test
-mvn --no-transfer-progress -Pnative -DskipTests -f artifact-test/pom.xml package
+mvn --no-transfer-progress -Pnative -DskipTests -f artifact-test/pom.xml clean package

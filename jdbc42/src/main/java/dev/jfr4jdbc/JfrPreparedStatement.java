@@ -1,6 +1,10 @@
 package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.event.StatementEvent;
+import dev.jfr4jdbc.interceptor.Interceptor;
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.interceptor.StatementContext;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.OperationInfo;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -20,14 +24,21 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     private Set<Parameter> parameters = new TreeSet<>();
 
     public JfrPreparedStatement(PreparedStatement p, String sql) {
-        this(p, sql, EventFactory.getDefaultEventFactory());
+        this(p, sql, InterceptorFactory.getDefaultInterceptorFactory());
     }
 
-    public JfrPreparedStatement(PreparedStatement p, String sql, EventFactory factory) {
+    public JfrPreparedStatement(PreparedStatement p, String sql, InterceptorFactory factory) {
         super(p, factory);
         this.sql = sql;
         this.jdbcStatement = p;
     }
+
+    JfrPreparedStatement(PreparedStatement p, String sql, InterceptorFactory factory, ConnectionInfo connectionInfo, OperationInfo operationInfo) {
+        super(p, factory, connectionInfo, operationInfo);
+        this.sql = sql;
+        this.jdbcStatement = p;
+    }
+
 
     private String parameterToString() {
         String parameterStr = this.parameters.stream().map(p -> String.format("%d=%s", p.index, (p.value == null) ? "null" : p.value.toString())).collect(Collectors.joining(", "));
@@ -37,40 +48,44 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     @Override
     public ResultSet executeQuery() throws SQLException {
 
-        StatementEvent event = super.createEvent(sql);
-        event.setPrepared(true);
-        event.setParameter(this.parameterToString());
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, true);
+        context.setInquiryParameter(this.parameterToString());
+
         this.parameters.clear();
-        event.begin();
 
         ResultSet rs = null;
         try {
+            interceptor.preInvoke(context);
             rs = this.jdbcStatement.executeQuery();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
-        return new JfrResultSet(rs);
+        return super.createResultSet(rs);
     }
 
     @Override
     public int executeUpdate() throws SQLException {
 
-        StatementEvent event = super.createEvent(sql);
-        event.setPrepared(true);
-        event.setParameter(this.parameterToString());
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, true);
+        context.setInquiryParameter(this.parameterToString());
+
         this.parameters.clear();
-        event.begin();
 
         int ret = 0;
         try {
+            interceptor.preInvoke(context);
             ret = this.jdbcStatement.executeUpdate();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return ret;
@@ -79,19 +94,21 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     @Override
     public boolean execute() throws SQLException {
 
-        StatementEvent event = super.createEvent(sql);
-        event.setPrepared(true);
-        event.setParameter(this.parameterToString());
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, true);
+        context.setInquiryParameter(this.parameterToString());
+
         this.parameters.clear();
-        event.begin();
 
         boolean ret = false;
         try {
+            interceptor.preInvoke(context);
             ret = this.jdbcStatement.execute();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return ret;

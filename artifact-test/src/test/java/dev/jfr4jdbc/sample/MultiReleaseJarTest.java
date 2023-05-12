@@ -1,8 +1,7 @@
-package dev.jfr4jdbc.artifact;
+package dev.jfr4jdbc.sample;
 
-import org.junit.jupiter.api.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.io.DataInputStream;
 import java.io.File;
@@ -10,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MultiReleaseJarTest {
 
@@ -58,8 +59,8 @@ public class MultiReleaseJarTest {
     void hasJdbc42() throws IOException {
         JarFile jarFile = open();
 
-        assertEquals(JAVA_8_VERSION, readMajorVersion(jarFile, "dev/jfr4jdbc/Jfr4JdbcDataSource.class"));
-        assertEquals(JAVA_8_VERSION, readMajorVersion(jarFile, "dev/jfr4jdbc/internal/Jfr4JdbcDataSource42.class"));
+        assertEquals(JAVA_8_VERSION, readMajorVersion(jarFile, "dev/jfr4jdbc/JfrDataSource.class"));
+        assertEquals(JAVA_8_VERSION, readMajorVersion(jarFile, "dev/jfr4jdbc/JfrDataSource42.class"));
     }
 
     @DisplayName("Classes for JDBC 4.3 exists")
@@ -67,8 +68,8 @@ public class MultiReleaseJarTest {
     void hasJdbc43() throws IOException {
         JarFile jarFile = open();
 
-        assertEquals(JAVA_11_VERSION, readMajorVersion(jarFile, "META-INF/versions/11/dev/jfr4jdbc/Jfr4JdbcDataSource.class"));
-        assertEquals(JAVA_11_VERSION, readMajorVersion(jarFile, "META-INF/versions/11/dev/jfr4jdbc/internal/Jfr4JdbcDataSource43.class"));
+        assertEquals(JAVA_11_VERSION, readMajorVersion(jarFile, "META-INF/versions/11/dev/jfr4jdbc/JfrDataSource.class"));
+        assertEquals(JAVA_11_VERSION, readMajorVersion(jarFile, "META-INF/versions/11/dev/jfr4jdbc/JfrDataSource43.class"));
     }
 
 

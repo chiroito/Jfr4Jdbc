@@ -1,92 +1,114 @@
-package dev.jfr4jdbc.internal;
+package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.EventFactory;
-import dev.jfr4jdbc.JfrCallableStatement;
-import dev.jfr4jdbc.JfrPreparedStatement;
-import dev.jfr4jdbc.JfrStatement;
-import dev.jfr4jdbc.event.CloseEvent;
-import dev.jfr4jdbc.event.CommitEvent;
-import dev.jfr4jdbc.event.RollbackEvent;
+import dev.jfr4jdbc.interceptor.*;
+import dev.jfr4jdbc.internal.*;
 
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 abstract public class JfrConnection42 implements Connection {
 
     private static final ResourceMonitor connectionResourceMonitor = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor("Connection");
 
     protected final Connection connection;
-    private final int connectionId;
-    private final EventFactory factory;
+
+    private final ConnectionInfo connectionInfo;
+
+    private final InterceptorFactory interceptorFactory;
+
     private final ResourceMonitor connectionMonitor;
 
+    private final AtomicInteger operationCounter = new AtomicInteger(1);
+
     protected JfrConnection42(Connection con) {
-        this(con, EventFactory.getDefaultEventFactory(), connectionResourceMonitor);
+        this(con, InterceptorFactory.getDefaultInterceptorFactory(), connectionResourceMonitor, new ConnectionInfo(null, 0, 0));
     }
 
-    protected JfrConnection42(Connection con, String label) {
-        this(con, EventFactory.getDefaultEventFactory(), ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor(label));
+    protected JfrConnection42(Connection con, String dataSourceLabel) {
+        this(con, InterceptorFactory.getDefaultInterceptorFactory(), ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor(dataSourceLabel), new ConnectionInfo(dataSourceLabel, 0, 0));
     }
 
-    protected JfrConnection42(Connection con, ResourceMonitor connectionMonitor) {
-        this(con, EventFactory.getDefaultEventFactory(), connectionMonitor);
+    protected JfrConnection42(Connection con, InterceptorFactory factory) {
+        this(con, factory, connectionResourceMonitor, new ConnectionInfo(null, 0, 0));
     }
 
-    protected JfrConnection42(Connection con, EventFactory factory, ResourceMonitor connectionMonitor) {
+    protected JfrConnection42(Connection con, InterceptorFactory factory, String dataSourceLabel) {
+        this(con, factory, ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor(dataSourceLabel), new ConnectionInfo(dataSourceLabel, 0, 0));
+    }
+
+    public JfrConnection42(Connection con, InterceptorFactory factory, ResourceMonitor connectionMonitor, ConnectionInfo connectionInfo) {
         super();
         this.connection = con;
-        this.connectionId = System.identityHashCode(this.connection);
-        this.factory = factory;
+        this.interceptorFactory = factory;
         this.connectionMonitor = connectionMonitor;
+        this.connectionInfo = connectionInfo;
+
         this.connectionMonitor.useResource();
     }
 
-    public int getConnectionId() {
-        return this.connectionId;
+    private JfrStatement createStatement(Statement s) {
+        return new JfrStatement(s, interceptorFactory, connectionInfo, new OperationInfo(operationCounter.getAndIncrement()));
+    }
+
+    private JfrPreparedStatement createPreparedStatement(PreparedStatement p, String sql) {
+        return new JfrPreparedStatement(p, sql, interceptorFactory, connectionInfo, new OperationInfo(operationCounter.getAndIncrement()));
+    }
+
+    private JfrCallableStatement createCallableStatement(CallableStatement c, String sql) {
+        return new JfrCallableStatement(c, sql, interceptorFactory, connectionInfo, new OperationInfo(operationCounter.getAndIncrement()));
+    }
+
+    public ConnectionInfo getConnectionInfo() {
+        return this.connectionInfo;
     }
 
     @Override
     public void commit() throws SQLException {
 
-        CommitEvent event = factory.createCommitEvent();
-        event.setConnectionId(connectionId);
-        event.begin();
+        Interceptor<CommitContext> interceptor = interceptorFactory.createCommitInterceptor();
+        CommitContext context = new CommitContext(this.connection, connectionInfo, new OperationInfo(operationCounter.getAndIncrement()));
         try {
+            interceptor.preInvoke(context);
             this.connection.commit();
         } catch (SQLException | RuntimeException e) {
-            event.commit();
+            context.setException(e);
             throw e;
+        } finally {
+            interceptor.postInvoke(context);
         }
-        event.commit();
     }
 
     @Override
     public void rollback() throws SQLException {
-        RollbackEvent event = factory.createRollbackEvent();
-        event.setConnectionId(connectionId);
-        event.begin();
+        Interceptor<RollbackContext> interceptor = interceptorFactory.createRollbackInterceptor();
+        RollbackContext context = new RollbackContext(this.connection, connectionInfo, new OperationInfo(operationCounter.getAndIncrement()));
+
         try {
+            interceptor.preInvoke(context);
             this.connection.rollback();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
     }
 
     @Override
     public void close() throws SQLException {
-        CloseEvent event = factory.createCloseEvent();
-        event.setConnectionId(this.connectionId);
-        event.begin();
+        Interceptor<CloseContext> interceptor = interceptorFactory.createCloseInterceptor();
+        CloseContext context = new CloseContext(this.connection, connectionInfo, new OperationInfo(operationCounter.getAndIncrement()));
         try {
+            interceptor.preInvoke(context);
             this.connection.close();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
             this.connectionMonitor.releaseResource();
         }
     }
@@ -94,74 +116,74 @@ abstract public class JfrConnection42 implements Connection {
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         PreparedStatement delegatePstate = this.connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
-        return new JfrPreparedStatement(delegatePstate, sql);
+        return this.createPreparedStatement(delegatePstate, sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
         PreparedStatement delegatePstate = this.connection.prepareStatement(sql, autoGeneratedKeys);
-        return new JfrPreparedStatement(delegatePstate, sql);
+        return this.createPreparedStatement(delegatePstate, sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
         PreparedStatement delegatePstate = this.connection.prepareStatement(sql, columnIndexes);
-        return new JfrPreparedStatement(delegatePstate, sql);
+        return this.createPreparedStatement(delegatePstate, sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
         PreparedStatement delegatePstate = this.connection.prepareStatement(sql, columnNames);
-        return new JfrPreparedStatement(delegatePstate, sql);
+        return this.createPreparedStatement(delegatePstate, sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
         PreparedStatement delegatePstate = this.connection.prepareStatement(sql);
-        return new JfrPreparedStatement(delegatePstate, sql);
+        return this.createPreparedStatement(delegatePstate, sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         PreparedStatement delegatePstate = this.connection.prepareStatement(sql, resultSetType, resultSetConcurrency);
-        return new JfrPreparedStatement(delegatePstate, sql);
+        return this.createPreparedStatement(delegatePstate, sql);
     }
 
     @Override
     public Statement createStatement() throws SQLException {
         Statement delegateState = this.connection.createStatement();
-        return new JfrStatement(delegateState);
+        return this.createStatement(delegateState);
     }
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         Statement delegateStates = this.connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
-        return new JfrStatement(delegateStates);
+        return this.createStatement(delegateStates);
     }
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
         Statement delegateState = this.connection.createStatement(resultSetType, resultSetConcurrency);
-        return new JfrStatement(delegateState);
+        return this.createStatement(delegateState);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         CallableStatement delegateCstate = this.connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
-        return new JfrCallableStatement(delegateCstate, sql);
+        return this.createCallableStatement(delegateCstate, sql);
     }
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
         CallableStatement delegateCstate = this.connection.prepareCall(sql);
-        return new JfrCallableStatement(delegateCstate, sql);
+        return this.createCallableStatement(delegateCstate, sql);
 
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         CallableStatement delegateCstate = this.connection.prepareCall(sql, resultSetType, resultSetConcurrency);
-        return new JfrCallableStatement(delegateCstate, sql);
+        return this.createCallableStatement(delegateCstate, sql);
     }
 
     @Override

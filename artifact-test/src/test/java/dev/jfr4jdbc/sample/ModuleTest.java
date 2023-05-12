@@ -1,13 +1,14 @@
-package dev.jfr4jdbc.artifact;
+package dev.jfr4jdbc.sample;
 
-import dev.jfr4jdbc.*;
-import org.junit.jupiter.api.*;
+import dev.jfr4jdbc.JfrDataSource;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ModuleTest {
 
-    Module module = Jfr4JdbcDataSource.class.getModule();
+    Module module = JfrDataSource.class.getModule();
 
     @DisplayName("Module is named")
     @Test

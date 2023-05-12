@@ -1,29 +1,38 @@
 package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.event.ConnectEvent;
+import dev.jfr4jdbc.interceptor.DriverContext;
+import dev.jfr4jdbc.interceptor.Interceptor;
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.internal.ConnectionInfo;
 import dev.jfr4jdbc.internal.ResourceMonitor;
 import dev.jfr4jdbc.internal.ResourceMonitorKind;
 import dev.jfr4jdbc.internal.ResourceMonitorManager;
 
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-/**
- * @author Chihiro Ito
- */
-public class Jfr4JdbcDriver implements Driver {
+public class JfrServiceLoadedDriver implements Driver {
 
     private static final String JFR4JDBC_URL_PREFIX = "jdbc:jfr";
     private static final int JFR4JDBC_URL_PREFIX_LENGTH = JFR4JDBC_URL_PREFIX.length();
     private static final ResourceMonitor connectionMonitor;
+
+    private final AtomicInteger connectionCounter = new AtomicInteger(1);
+
+    private final InterceptorFactory interceptorFactory = InterceptorFactory.getDefaultInterceptorFactory();
+
+    private final Map<String, Driver> driverCache = new HashMap<>(1);
 
     static {
         try {
             ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
             connectionMonitor = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor("Connection");
             manager.addMonitor(connectionMonitor);
-            DriverManager.registerDriver(new Jfr4JdbcDriver());
+            DriverManager.registerDriver(new JfrServiceLoadedDriver());
         } catch (SQLException e) {
             throw new RuntimeException("Could not register Jfr4Jdbc.", e);
         }
@@ -41,15 +50,22 @@ public class Jfr4JdbcDriver implements Driver {
     /**
      *
      */
-    private Driver delegateJdbcDriver;
-    private EventFactory factory = EventFactory.getDefaultEventFactory();
 
-    public Jfr4JdbcDriver() {
+    public JfrServiceLoadedDriver() {
         super();
     }
 
-    Jfr4JdbcDriver(Driver driver) {
-        this.delegateJdbcDriver = driver;
+    private InterceptorFactory loadInterceptorFactory(String url, Properties info) {
+        return InterceptorFactory.getDefaultInterceptorFactory();
+    }
+
+    private Driver getDelegatedDriver(String url) throws SQLException {
+        Driver driver = driverCache.get(url);
+        if (driver == null) {
+            driver = DriverManager.getDriver(url);
+            driverCache.put(url, driver);
+        }
+        return driver;
     }
 
     @Override
@@ -61,16 +77,12 @@ public class Jfr4JdbcDriver implements Driver {
         }
 
         // Checking whether the driver is present.
-        String delegeteJdbcDriverUrl = Jfr4JdbcDriver.getDelegateUrl(url);
+        String delegeteJdbcDriverUrl = JfrServiceLoadedDriver.getDelegateUrl(url);
         Driver delegateDriver;
-        if (this.delegateJdbcDriver == null) {
-            try {
-                delegateDriver = DriverManager.getDriver(delegeteJdbcDriverUrl);
-            } catch (SQLException e) {
-                delegateDriver = null;
-            }
-        } else {
-            delegateDriver = this.delegateJdbcDriver;
+        try {
+            delegateDriver = this.getDelegatedDriver(delegeteJdbcDriverUrl);
+        } catch (SQLException e) {
+            delegateDriver = null;
         }
 
         return delegateDriver != null;
@@ -84,60 +96,56 @@ public class Jfr4JdbcDriver implements Driver {
         }
 
         // Get a delegated Driver
-        String delegeteUrl = Jfr4JdbcDriver.getDelegateUrl(url);
-        Driver delegateDriver = (this.delegateJdbcDriver == null) ? DriverManager.getDriver(delegeteUrl) : this.delegateJdbcDriver;
+        String delegeteUrl = JfrServiceLoadedDriver.getDelegateUrl(url);
+        Driver delegateDriver = this.getDelegatedDriver(delegeteUrl);
         if (delegateDriver == null) {
             return null;
         }
-        this.delegateJdbcDriver = delegateDriver;
+
+        int connectionId = connectionCounter.getAndIncrement();
+        DriverContext context = new DriverContext(delegateDriver, delegeteUrl, connectionId);
+        Interceptor<DriverContext> interceptor = this.interceptorFactory.createDriverInterceptor();
 
         // Connecting to delegated url and recording connect event.
-        ConnectEvent event = factory.createConnectEvent();
-        event.setUrl(delegeteUrl);
-        event.begin();
         Connection delegatedCon = null;
         try {
             this.connectionMonitor.waitAssigningResource();
 
+            interceptor.preInvoke(context);
             delegatedCon = delegateDriver.connect(delegeteUrl, info);
             if (delegatedCon == null) {
                 throw new SQLException("Invalid driver url: " + url);
-            } else {
-                event.setConnectionClass(delegatedCon.getClass());
-                event.setConnectionId(System.identityHashCode(delegatedCon));
             }
+            context.setConnection(delegatedCon, 0);
+
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
+            interceptor.postInvoke(context);
             this.connectionMonitor.assignedResource();
-            event.commit();
         }
 
-        return new JfrConnection(delegatedCon);
+        return new JfrConnection(delegatedCon, loadInterceptorFactory(url, info), this.connectionMonitor, new ConnectionInfo(this.connectionMonitor.getLabel(), connectionId, 0));
     }
 
     @Override
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-        if (this.delegateJdbcDriver == null) {
+        Driver driver = this.getDelegatedDriver(url);
+        if (driver == null) {
             throw new Jfr4JdbcRuntimeException("No delegate Driver");
         }
-        return this.delegateJdbcDriver.getPropertyInfo(this.getDelegateUrl(url), info);
+        return driver.getPropertyInfo(this.getDelegateUrl(url), info);
     }
 
     @Override
     public int getMajorVersion() {
-        if (this.delegateJdbcDriver == null) {
-            throw new Jfr4JdbcRuntimeException("No delegate Driver");
-        }
-        return this.delegateJdbcDriver.getMajorVersion();
+        return 2;
     }
 
     @Override
     public int getMinorVersion() {
-        if (this.delegateJdbcDriver == null) {
-            throw new Jfr4JdbcRuntimeException("No delegate Driver");
-        }
-        return this.delegateJdbcDriver.getMinorVersion();
+        return 0;
     }
 
     @Override
@@ -147,9 +155,6 @@ public class Jfr4JdbcDriver implements Driver {
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        if (this.delegateJdbcDriver == null) {
-            throw new Jfr4JdbcRuntimeException("No delegate Driver");
-        }
-        return this.delegateJdbcDriver.getParentLogger();
+        throw new SQLFeatureNotSupportedException("Jfr4Jdbc doesn't support");
     }
 }

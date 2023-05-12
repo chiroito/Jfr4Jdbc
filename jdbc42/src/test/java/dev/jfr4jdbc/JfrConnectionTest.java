@@ -12,7 +12,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +44,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Commit");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertTrue(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
     }
 
     @DisplayName("create CommitEvent throw exception as expected")
@@ -65,7 +66,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Commit");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @DisplayName("create CommitEvent throw exception as unexpected")
@@ -87,7 +88,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Commit");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @DisplayName("create RollbackEvent")
@@ -101,7 +102,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Rollback");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @DisplayName("create RollbackEvent throw exception as expected")
@@ -123,7 +124,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Rollback");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @DisplayName("create RollbackEvent throw exception as unexpected")
@@ -145,7 +146,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Rollback");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @DisplayName("create CloseEvent")
@@ -159,7 +160,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Close");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @DisplayName("create CloseEvent throw exception as expected")
@@ -181,7 +182,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Close");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @DisplayName("create CloseEvent throw exception as unexpected")
@@ -203,7 +204,7 @@ class JfrConnectionTest {
         List<RecordedEvent> events = fr.getEvents("Close");
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
     }
 
     @Test

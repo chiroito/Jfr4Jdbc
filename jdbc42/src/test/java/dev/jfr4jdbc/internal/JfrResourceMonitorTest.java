@@ -1,8 +1,8 @@
 package dev.jfr4jdbc.internal;
 
 import dev.jfr4jdbc.FlightRecording;
-import dev.jfr4jdbc.Jfr4JdbcDataSource;
 import dev.jfr4jdbc.JfrConnection;
+import dev.jfr4jdbc.JfrDataSource;
 import dev.jfr4jdbc.MockJDBC;
 import dev.jfr4jdbc.event.jfr.JfrConnectionResourceEvent;
 import jdk.jfr.consumer.RecordedEvent;
@@ -45,7 +45,7 @@ public class JfrResourceMonitorTest {
         FlightRecording fr = FlightRecording.start();
         fr.enable(JfrConnectionResourceEvent.class);
 
-        DataSource dataSource = new Jfr4JdbcDataSource(db.getDataSource(1));
+        DataSource dataSource = new JfrDataSource(db.getDataSource(1));
         ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
         ResourceMonitor.recordResourceMonitor(manager);
         fr.stop();
@@ -78,7 +78,7 @@ public class JfrResourceMonitorTest {
         FlightRecording fr = FlightRecording.start();
         fr.enable(JfrConnectionResourceEvent.class);
 
-        DataSource dataSource = new Jfr4JdbcDataSource(db.getDataSource(1), "ds" + labelId);
+        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
         ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
         ResourceMonitor.recordResourceMonitor(manager);
         Connection con1 = dataSource.getConnection();
@@ -134,7 +134,7 @@ public class JfrResourceMonitorTest {
         FlightRecording fr = FlightRecording.start();
         fr.enable(JfrConnectionResourceEvent.class);
 
-        DataSource dataSource = new Jfr4JdbcDataSource(db.getDataSource(1), "ds" + labelId);
+        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
         ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
         ResourceMonitor.recordResourceMonitor(manager);
         JfrConnection con = new JfrConnection(Mockito.mock(Connection.class), "con" + labelId);
@@ -173,7 +173,7 @@ public class JfrResourceMonitorTest {
         FlightRecording fr = FlightRecording.start();
         fr.enable(JfrConnectionResourceEvent.class);
 
-        DataSource dataSource = new Jfr4JdbcDataSource(db.getDataSource(1), "ds" + labelId);
+        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
         ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
         ResourceMonitor monitor = manager.getMonitor("ds" + labelId);
 
@@ -222,8 +222,8 @@ public class JfrResourceMonitorTest {
         FlightRecording fr = FlightRecording.start();
         fr.enable(JfrConnectionResourceEvent.class);
 
-        DataSource dataSource = new Jfr4JdbcDataSource(db.getDataSource(1), "ds" + labelId);
-        DataSource dataSource2 = new Jfr4JdbcDataSource(db.getDataSource(1), "ds" + labelId + "_2");
+        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
+        DataSource dataSource2 = new JfrDataSource(db.getDataSource(1), "ds" + labelId + "_2");
         ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
         ResourceMonitor monitor = manager.getMonitor("ds" + labelId);
         ResourceMonitor monitor2 = manager.getMonitor("ds" + labelId + "_2");

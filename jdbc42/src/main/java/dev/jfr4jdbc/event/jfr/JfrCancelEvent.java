@@ -1,5 +1,6 @@
 package dev.jfr4jdbc.event.jfr;
 
+import dev.jfr4jdbc.ConnectionId;
 import dev.jfr4jdbc.event.CancelEvent;
 import jdk.jfr.Label;
 
@@ -7,6 +8,7 @@ import jdk.jfr.Label;
 public class JfrCancelEvent extends JfrJdbcEvent implements CancelEvent {
 
     @Label("connectionId")
+    @ConnectionId
     private int connectionId;
 
     @Label("statementId")

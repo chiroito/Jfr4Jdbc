@@ -1,6 +1,8 @@
-package dev.jfr4jdbc.internal;
+package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.EventFactory;
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.ResourceMonitor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -8,21 +10,26 @@ import java.sql.ShardingKey;
 
 abstract public class JfrConnection43 extends JfrConnection42 implements Connection {
 
-    protected JfrConnection43(Connection con) {
+    public JfrConnection43(Connection con) {
         super(con);
     }
 
-    protected JfrConnection43(Connection con, String label) {
-        super(con, label);
+    public JfrConnection43(Connection con, String dataSourceLabel) {
+        super(con, dataSourceLabel);
     }
 
-    protected JfrConnection43(Connection con, ResourceMonitor connectionMonitor) {
-        super(con, connectionMonitor);
+    public JfrConnection43(Connection con, InterceptorFactory factory) {
+        super(con, factory);
     }
 
-    protected JfrConnection43(Connection con, EventFactory factory, ResourceMonitor connectionMonitor) {
-        super(con, factory, connectionMonitor);
+    public JfrConnection43(Connection con, InterceptorFactory factory, String dataSourceLabel) {
+        super(con, factory, dataSourceLabel);
     }
+
+    public JfrConnection43(Connection con, InterceptorFactory factory, ResourceMonitor connectionMonitor, ConnectionInfo connectionInfo) {
+        super(con, factory, connectionMonitor, connectionInfo);
+    }
+
 
     @Override
     public int getNetworkTimeout() throws SQLException {

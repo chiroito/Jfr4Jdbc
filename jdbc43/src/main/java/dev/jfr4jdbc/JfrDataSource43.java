@@ -1,27 +1,27 @@
-package dev.jfr4jdbc.internal;
+package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.EventFactory;
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
 
 import javax.sql.DataSource;
 import java.sql.ConnectionBuilder;
 import java.sql.SQLException;
 import java.sql.ShardingKeyBuilder;
 
-abstract public class Jfr4JdbcDataSource43 extends Jfr4JdbcDataSource42 implements DataSource {
+abstract public class JfrDataSource43 extends JfrDataSource42 implements DataSource {
 
-    protected Jfr4JdbcDataSource43(DataSource datasource) {
+    protected JfrDataSource43(DataSource datasource) {
         super(datasource);
     }
 
-    protected Jfr4JdbcDataSource43(DataSource datasource, String monitorLabel) {
+    protected JfrDataSource43(DataSource datasource, String monitorLabel) {
         super(datasource, monitorLabel);
     }
 
-    protected Jfr4JdbcDataSource43(DataSource datasource, EventFactory factory) {
+    protected JfrDataSource43(DataSource datasource, InterceptorFactory factory) {
         super(datasource, factory);
     }
 
-    protected Jfr4JdbcDataSource43(DataSource datasource, EventFactory factory, String monitorLabel) {
+    protected JfrDataSource43(DataSource datasource, InterceptorFactory factory, String monitorLabel) {
         super(datasource, factory, monitorLabel);
     }
 

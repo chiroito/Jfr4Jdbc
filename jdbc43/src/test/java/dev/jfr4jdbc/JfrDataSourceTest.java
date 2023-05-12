@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class Jfr4JdbcDataSourceTest {
+class JfrDataSourceTest {
 
     @Mock
     DataSource delegatedDs;
@@ -24,7 +24,7 @@ class Jfr4JdbcDataSourceTest {
 
     @Test
     void createConnectionBuilder() throws Exception {
-        Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
         dataSource.createConnectionBuilder();
 
         verify(delegatedDs).createConnectionBuilder();
@@ -32,7 +32,7 @@ class Jfr4JdbcDataSourceTest {
 
     @Test
     void createShardingKeyBuilder() throws Exception {
-        Jfr4JdbcDataSource dataSource = new Jfr4JdbcDataSource(delegatedDs);
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
         dataSource.createShardingKeyBuilder();
 
         verify(delegatedDs).createShardingKeyBuilder();

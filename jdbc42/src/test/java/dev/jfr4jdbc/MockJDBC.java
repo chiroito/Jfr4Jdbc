@@ -81,7 +81,6 @@ public class MockJDBC {
         Mockito.lenient().doAnswer((m) -> {
             ResultSet resultSet = Mockito.mock(ResultSet.class);
             initResultSet(resultSet);
-            when(resultSet.getStatement()).thenReturn(stmt);
             return resultSet;
         }).when(stmt).executeQuery();
 

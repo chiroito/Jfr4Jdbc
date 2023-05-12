@@ -1,127 +1,146 @@
-package dev.jfr4jdbc.internal;
+package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.EventFactory;
-import dev.jfr4jdbc.JfrResultSet;
-import dev.jfr4jdbc.event.CancelEvent;
-import dev.jfr4jdbc.event.StatementEvent;
+import dev.jfr4jdbc.interceptor.CancelContext;
+import dev.jfr4jdbc.interceptor.Interceptor;
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.interceptor.StatementContext;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.OperationInfo;
 
 import java.sql.*;
 
 abstract public class JfrStatement42 implements Statement {
 
-    private final EventFactory factory;
+    protected final InterceptorFactory interceptorFactory;
     protected final Statement jdbcStatement;
-    private final int statementId;
+
+    private final ConnectionInfo connectionInfo;
+
+    private final OperationInfo operationInfo;
+
+    public OperationInfo getOperationInfo() {
+        return this.operationInfo;
+    }
+
     private StringBuilder batchSql;
 
     protected JfrStatement42(Statement s) {
-        this(s, EventFactory.getDefaultEventFactory());
+        this(s, InterceptorFactory.getDefaultInterceptorFactory(), new ConnectionInfo(null, 0, 0), new OperationInfo(0));
     }
 
-    protected JfrStatement42(Statement s, EventFactory factory) {
+    protected JfrStatement42(Statement s, InterceptorFactory factory) {
+        this(s, factory, new ConnectionInfo(null, 0, 0), new OperationInfo(0));
+    }
+
+    protected JfrStatement42(Statement s, InterceptorFactory factory, ConnectionInfo connectionInfo, OperationInfo operationInfo) {
         super();
         this.jdbcStatement = s;
-        this.statementId = System.identityHashCode(s);
-        this.factory = factory;
+        this.interceptorFactory = factory;
+        this.connectionInfo = connectionInfo;
+        this.operationInfo = operationInfo;
     }
 
-    public int getStatementId() {
-        return this.statementId;
-    }
+    protected StatementContext createContext(String inquiry, boolean isPrepared) {
 
-    protected StatementEvent createEvent(String sql) {
-
-        StatementEvent event = this.factory.createStatementEvent();
+        StatementContext context = new StatementContext(this.jdbcStatement, this.connectionInfo, this.operationInfo, inquiry, isPrepared);
         try {
-
-            event.setSql(sql);
             if (this.jdbcStatement != null) {
                 // Add Statement Info.
-                event.setStatementId(this.statementId);
-                event.setPoolable(this.jdbcStatement.isPoolable());
-                event.setClosed(this.jdbcStatement.isClosed());
-                event.setStatementClass(this.jdbcStatement.getClass());
+                context.setStatementPoolable(this.jdbcStatement.isPoolable());
+                context.setStatementClosed(this.jdbcStatement.isClosed());
 
                 // Add Connection Info.
                 Connection con = this.jdbcStatement.getConnection();
                 if (con != null) {
-                    event.setConnectionId(System.identityHashCode(con));
-                    event.setAutoCommit(con.getAutoCommit());
+                    context.setConnection(con);
+                    context.setAutoCommitted(con.getAutoCommit());
                 }
             }
         } catch (SQLException e) {
         }
 
-        return event;
+        return context;
+    }
+
+    protected JfrResultSet createResultSet(ResultSet rs) {
+        return new JfrResultSet(rs, interceptorFactory, this.connectionInfo, this.operationInfo);
     }
 
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         ResultSet rs = null;
         try {
+            interceptor.preInvoke(context);
             rs = this.jdbcStatement.executeQuery(sql);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
-        return new JfrResultSet(rs);
+        return this.createResultSet(rs);
     }
 
     @Override
     public ResultSet getResultSet() throws SQLException {
 
-        StatementEvent event = this.createEvent("");
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext("getResultSet", false);
 
         ResultSet rs;
         try {
+            interceptor.preInvoke(context);
             rs = this.jdbcStatement.getResultSet();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
-        return new JfrResultSet(rs);
+        return this.createResultSet(rs);
     }
 
     @Override
     public ResultSet getGeneratedKeys() throws SQLException {
 
-        StatementEvent event = this.createEvent("getGeneratedKeys");
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext("getGeneratedKeys", false);
 
         ResultSet rs;
         try {
+            interceptor.preInvoke(context);
             rs = this.jdbcStatement.getGeneratedKeys();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
-        return new JfrResultSet(rs);
+        return this.createResultSet(rs);
     }
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         int result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.executeUpdate(sql);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -130,16 +149,18 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         int result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.executeUpdate(sql, autoGeneratedKeys);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -148,16 +169,18 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         int result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.executeUpdate(sql, columnIndexes);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -166,16 +189,18 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public int executeUpdate(String sql, String[] columnNames) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         int result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.executeUpdate(sql, columnNames);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -184,16 +209,18 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public boolean execute(String sql) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         boolean result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.execute(sql);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -202,16 +229,18 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         boolean result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.execute(sql, autoGeneratedKeys);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -220,16 +249,18 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public boolean execute(String sql, int[] columnIndexes) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         boolean result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.execute(sql, columnIndexes);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -238,16 +269,18 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public boolean execute(String sql, String[] columnNames) throws SQLException {
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         boolean result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.execute(sql, columnNames);
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -258,16 +291,18 @@ abstract public class JfrStatement42 implements Statement {
 
         String sql = (this.batchSql == null) ? "" : this.batchSql.toString();
 
-        StatementEvent event = this.createEvent(sql);
-        event.begin();
+        Interceptor<StatementContext> interceptor = interceptorFactory.createStatementInterceptor();
+        StatementContext context = this.createContext(sql, false);
 
         int[] result;
         try {
+            interceptor.preInvoke(context);
             result = this.jdbcStatement.executeBatch();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
 
         return result;
@@ -276,17 +311,17 @@ abstract public class JfrStatement42 implements Statement {
     @Override
     public void cancel() throws SQLException {
 
-        CancelEvent event = factory.createCancelEvent();
-        event.setConnectionId(System.identityHashCode(this.getConnection()));
-        event.setStatementId(this.statementId);
-        event.begin();
+        Interceptor<CancelContext> interceptor = interceptorFactory.createCancelInterceptor();
+        CancelContext context = new CancelContext(this.getConnection(), this, this.connectionInfo, this.operationInfo);
 
         try {
+            interceptor.preInvoke(context);
             this.jdbcStatement.cancel();
         } catch (SQLException | RuntimeException e) {
+            context.setException(e);
             throw e;
         } finally {
-            event.commit();
+            interceptor.postInvoke(context);
         }
     }
 

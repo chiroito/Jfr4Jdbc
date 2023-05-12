@@ -49,11 +49,11 @@ class JfrStatementTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertTrue(event.getInt("statementId") > 0);
+        assertEquals(0, event.getInt("statementId"));
         assertFalse(event.getBoolean("poolable"));
         assertFalse(event.getBoolean("closed"));
         assertTrue(event.getClass("statementClass") != null);
-        assertFalse(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
         assertFalse(event.getBoolean("autoCommit"));
         assertFalse(event.getBoolean("prepared"));
     }
@@ -82,11 +82,11 @@ class JfrStatementTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertTrue(event.getInt("statementId") > 0);
+        assertEquals(0, event.getInt("statementId"));
         assertFalse(event.getBoolean("poolable"));
         assertFalse(event.getBoolean("closed"));
         assertTrue(event.getClass("statementClass") != null);
-        assertFalse(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
         assertFalse(event.getBoolean("autoCommit"));
         assertFalse(event.getBoolean("prepared"));
     }
@@ -115,11 +115,11 @@ class JfrStatementTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertTrue(event.getInt("statementId") > 0);
+        assertEquals(0, event.getInt("statementId"));
         assertFalse(event.getBoolean("poolable"));
         assertFalse(event.getBoolean("closed"));
         assertTrue(event.getClass("statementClass") != null);
-        assertFalse(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
         assertFalse(event.getBoolean("autoCommit"));
         assertFalse(event.getBoolean("prepared"));
     }
@@ -138,11 +138,11 @@ class JfrStatementTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertTrue(event.getInt("statementId") > 0);
+        assertEquals(0, event.getInt("statementId"));
         assertTrue(event.getBoolean("poolable"));
         assertFalse(event.getBoolean("closed"));
         assertTrue(event.getClass("statementClass") != null);
-        assertFalse(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
         assertFalse(event.getBoolean("autoCommit"));
         assertFalse(event.getBoolean("prepared"));
     }
@@ -161,11 +161,11 @@ class JfrStatementTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertTrue(event.getInt("statementId") > 0);
+        assertEquals(0, event.getInt("statementId"));
         assertFalse(event.getBoolean("poolable"));
         assertTrue(event.getBoolean("closed"));
         assertTrue(event.getClass("statementClass") != null);
-        assertFalse(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
         assertFalse(event.getBoolean("autoCommit"));
         assertFalse(event.getBoolean("prepared"));
     }
@@ -185,11 +185,11 @@ class JfrStatementTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertTrue(event.getInt("statementId") > 0);
+        assertEquals(0, event.getInt("statementId"));
         assertFalse(event.getBoolean("poolable"));
         assertFalse(event.getBoolean("closed"));
         assertTrue(event.getClass("statementClass") != null);
-        assertTrue(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
         assertFalse(event.getBoolean("autoCommit"));
         assertFalse(event.getBoolean("prepared"));
     }
@@ -211,11 +211,11 @@ class JfrStatementTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertTrue(event.getInt("statementId") > 0);
+        assertEquals(0, event.getInt("statementId"));
         assertFalse(event.getBoolean("poolable"));
         assertFalse(event.getBoolean("closed"));
         assertTrue(event.getClass("statementClass") != null);
-        assertTrue(event.getInt("connectionId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
         assertTrue(event.getBoolean("autoCommit"));
         assertFalse(event.getBoolean("prepared"));
     }

@@ -18,10 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class OneStopTest {
 
     @BeforeAll
-    static void registerJfrDriver(){
+    static void registerJfrDriver() {
         try {
-            DriverManager.registerDriver(new Jfr4JdbcDriver());
-        }catch (SQLException e){
+            DriverManager.registerDriver(new JfrServiceLoadedDriver());
+        } catch (SQLException e) {
             throw new Jfr4JdbcTestRuntimeException(e);
         }
     }
@@ -34,7 +34,7 @@ public class OneStopTest {
 
         FlightRecording fr = FlightRecording.start();
 
-        DataSource ds = new Jfr4JdbcDataSource(db.getDataSource(1));
+        DataSource ds = new JfrDataSource(db.getDataSource(1));
         try (Connection con = ds.getConnection()) {
             OneStopTest(con);
         }

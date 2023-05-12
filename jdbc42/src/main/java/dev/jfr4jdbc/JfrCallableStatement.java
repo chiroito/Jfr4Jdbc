@@ -1,5 +1,9 @@
 package dev.jfr4jdbc;
 
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.OperationInfo;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -14,11 +18,16 @@ public class JfrCallableStatement extends JfrPreparedStatement implements Callab
     private CallableStatement jdbcStatement;
 
     public JfrCallableStatement(CallableStatement c, String sql) {
-        this(c, sql, EventFactory.getDefaultEventFactory());
+        this(c, sql, InterceptorFactory.getDefaultInterceptorFactory());
     }
 
-    public JfrCallableStatement(CallableStatement c, String sql, EventFactory factory) {
+    public JfrCallableStatement(CallableStatement c, String sql, InterceptorFactory factory) {
         super(c, sql, factory);
+        this.jdbcStatement = c;
+    }
+
+    JfrCallableStatement(CallableStatement c, String sql, InterceptorFactory factory, ConnectionInfo connectionInfo, OperationInfo operationInfo) {
+        super(c, sql, factory, connectionInfo, operationInfo);
         this.jdbcStatement = c;
     }
 

@@ -1,5 +1,6 @@
 package dev.jfr4jdbc.event.jfr;
 
+import dev.jfr4jdbc.ConnectionId;
 import dev.jfr4jdbc.event.ConnectEvent;
 import jdk.jfr.Label;
 
@@ -13,6 +14,7 @@ public class JfrConnectionEvent extends JfrJdbcEvent implements ConnectEvent {
     private String connectionClass;
 
     @Label("connectionId")
+    @ConnectionId
     private int connectionId;
 
     @Label("dataSourceId")

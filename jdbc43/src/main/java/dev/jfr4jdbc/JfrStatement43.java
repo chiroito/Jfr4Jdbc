@@ -1,18 +1,24 @@
-package dev.jfr4jdbc.internal;
+package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.EventFactory;
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.OperationInfo;
 
 import java.sql.SQLException;
 import java.sql.Statement;
 
 public class JfrStatement43 extends JfrStatement42 implements Statement {
 
-    public JfrStatement43(Statement s) {
+    protected JfrStatement43(Statement s) {
         super(s);
     }
 
-    public JfrStatement43(Statement s, EventFactory factory) {
+    protected JfrStatement43(Statement s, InterceptorFactory factory) {
         super(s, factory);
+    }
+
+    protected JfrStatement43(Statement s, InterceptorFactory factory, ConnectionInfo connectionInfo, OperationInfo operationInfo) {
+        super(s, factory, connectionInfo, operationInfo);
     }
 
     @Override

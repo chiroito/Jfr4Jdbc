@@ -1,5 +1,6 @@
 package dev.jfr4jdbc.event.jfr;
 
+import dev.jfr4jdbc.ConnectionId;
 import dev.jfr4jdbc.event.CommitEvent;
 import jdk.jfr.Label;
 
@@ -7,6 +8,7 @@ import jdk.jfr.Label;
 public class JfrCommitEvent extends JfrJdbcEvent implements CommitEvent {
 
     @Label("connectionId")
+    @ConnectionId
     private int connectionId;
 
     public void setConnectionId(int connectionId) {

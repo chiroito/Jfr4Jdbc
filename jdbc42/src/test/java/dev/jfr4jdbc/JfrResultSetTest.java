@@ -17,7 +17,8 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @TestClassOrder(ClassOrderer.OrderAnnotation.class)
@@ -40,10 +41,6 @@ class JfrResultSetTest {
     @Test
     void createStatementEvent() throws Exception {
         when(this.delegateResultSet.getRow()).thenReturn(1);
-        Connection delegateCon = mock(Connection.class);
-        Statement delegateStmt = mock(Statement.class);
-        when(this.delegateResultSet.getStatement()).thenReturn(delegateStmt);
-        when(delegateStmt.getConnection()).thenReturn(delegateCon);
 
         JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
         FlightRecording fr = FlightRecording.start();
@@ -54,9 +51,9 @@ class JfrResultSetTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertEquals(1, event.getInt("rowNo"));
-        assertTrue(event.getInt("connectionId") > 0);
-        assertTrue(event.getInt("statementId") > 0);
-        assertTrue(event.getInt("resultSetId") > 0);
+        assertEquals(0, event.getInt("connectionId"));
+        assertEquals(0, event.getInt("statementId"));
+        assertEquals(0, event.getInt("resultSetId"));
         assertTrue(event.getClass("resultSetClass") != null);
     }
 

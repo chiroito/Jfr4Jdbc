@@ -25,10 +25,10 @@ public class LinkageIdTest {
 
         FlightRecording fr = FlightRecording.start();
 
-        DataSource ds = new Jfr4JdbcDataSource(db.getDataSource(1));
+        DataSource ds = new JfrDataSource(db.getDataSource(1));
         int connectionId;
         try (Connection con = ds.getConnection()) {
-            connectionId = ((JfrConnection) con).getConnectionId();
+            connectionId = ((JfrConnection) con).getConnectionInfo().conId;
             try (PreparedStatement stmt = con.prepareStatement("SELECT 1 FROM dual"); ResultSet resultSet = stmt.executeQuery();) {
                 resultSet.next();
                 con.commit();
@@ -61,11 +61,11 @@ public class LinkageIdTest {
 
         FlightRecording fr = FlightRecording.start();
 
-        DataSource ds = new Jfr4JdbcDataSource(db.getDataSource(1));
+        DataSource ds = new JfrDataSource(db.getDataSource(1));
         int statementId;
         try (Connection con = ds.getConnection()) {
             try (PreparedStatement stmt = con.prepareStatement("SELECT 1 FROM dual"); ResultSet resultSet = stmt.executeQuery();) {
-                statementId = ((JfrPreparedStatement) stmt).getStatementId();
+                statementId = ((JfrPreparedStatement) stmt).getOperationInfo().id;
                 resultSet.next();
             }
         }

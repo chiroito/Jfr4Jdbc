@@ -1,5 +1,6 @@
 package dev.jfr4jdbc.event.jfr;
 
+import dev.jfr4jdbc.ConnectionId;
 import dev.jfr4jdbc.event.StatementEvent;
 import jdk.jfr.Label;
 
@@ -10,6 +11,7 @@ public class JfrStatementEvent extends JfrJdbcEvent implements StatementEvent {
     private String sql;
 
     @Label("connectionId")
+    @ConnectionId
     private int connectionId;
 
     @Label("statementId")

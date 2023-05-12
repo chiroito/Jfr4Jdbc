@@ -1,6 +1,8 @@
 package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.internal.JfrStatement43;
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.OperationInfo;
 
 import java.sql.Statement;
 
@@ -10,7 +12,11 @@ public class JfrStatement extends JfrStatement43 implements Statement {
         super(s);
     }
 
-    public JfrStatement(Statement s, EventFactory factory) {
+    public JfrStatement(Statement s, InterceptorFactory factory) {
         super(s, factory);
+    }
+
+    JfrStatement(Statement s, InterceptorFactory factory, ConnectionInfo connectionInfo, OperationInfo operationInfo) {
+        super(s, factory, connectionInfo, operationInfo);
     }
 }
