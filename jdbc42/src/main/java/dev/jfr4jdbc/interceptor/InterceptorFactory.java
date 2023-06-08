@@ -1,7 +1,5 @@
 package dev.jfr4jdbc.interceptor;
 
-import dev.jfr4jdbc.interceptor.impl.legacy.LegacyInterceptorFactory;
-
 public interface InterceptorFactory {
     Interceptor<DataSourceContext> createDataSourceInterceptor();
 
@@ -19,7 +17,5 @@ public interface InterceptorFactory {
 
     Interceptor<ResultSetContext> createResultSetInterceptor();
 
-    static InterceptorFactory getDefaultInterceptorFactory() {
-        return new LegacyInterceptorFactory();
-    }
+    Interceptor<ResourceMonitorContext> createResourceMonitorInterceptor();
 }

@@ -18,16 +18,19 @@ public class LegacyDriverInterceptor implements Interceptor<DriverContext> {
     @Override
     public void preInvoke(DriverContext context) {
         event = this.eventFactory.createConnectEvent();
-        event.setUrl(context.url);
         event.begin();
     }
 
     @Override
     public void postInvoke(DriverContext context) {
-        if (context.getConnection() != null) {
-            event.setConnectionClass(context.getConnection().getClass());
+        event.end();
+        if (event.shouldCommit()) {
+            if (context.getConnection() != null) {
+                event.setConnectionClass(context.getConnection().getClass());
+            }
+            event.setUrl(context.url);
+            event.setConnectionId(context.getConnectionInfo().conId);
+            event.commit();
         }
-        event.setConnectionId(context.getConnectionInfo().conId);
-        event.commit();
     }
 }

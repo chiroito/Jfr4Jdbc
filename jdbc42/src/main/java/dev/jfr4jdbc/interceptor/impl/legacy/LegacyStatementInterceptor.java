@@ -18,23 +18,26 @@ public class LegacyStatementInterceptor implements Interceptor<StatementContext>
     @Override
     public void preInvoke(StatementContext context) {
         event = this.eventFactory.createStatementEvent();
-        event.setSql(context.inquiry);
-        event.setPrepared(context.isPrepared);
-        event.setParameter(context.getInquiryParameter());
-
-        event.setStatementId(context.operationInfo.id);
-        event.setPoolable(context.isStatementPoolable());
-        event.setClosed(context.isStatementClosed());
-        event.setConnectionId(context.connectionInfo.conId);
-        event.setAutoCommit(context.isAutoCommitted());
-        if (context.statement != null) {
-            event.setStatementClass(context.statement.getClass());
-        }
         event.begin();
     }
 
     @Override
-    public void postInvoke(StatementContext statementContext) {
-        event.commit();
+    public void postInvoke(StatementContext context) {
+        event.end();
+        if (event.shouldCommit()) {
+            event.setSql(context.inquiry);
+            event.setPrepared(context.isPrepared);
+            event.setParameter(context.getInquiryParameter());
+
+            event.setStatementId(context.operationInfo.id);
+            event.setPoolable(context.isStatementPoolable());
+            event.setClosed(context.isStatementClosed());
+            event.setConnectionId(context.connectionInfo.conId);
+            event.setAutoCommit(context.isAutoCommitted());
+            if (context.statement != null) {
+                event.setStatementClass(context.statement.getClass());
+            }
+            event.commit();
+        }
     }
 }

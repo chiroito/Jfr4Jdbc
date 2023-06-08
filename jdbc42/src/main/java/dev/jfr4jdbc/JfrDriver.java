@@ -3,6 +3,7 @@ package dev.jfr4jdbc;
 import dev.jfr4jdbc.interceptor.DriverContext;
 import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.internal.ConnectionInfo;
 import dev.jfr4jdbc.internal.ResourceMonitor;
 import dev.jfr4jdbc.internal.ResourceMonitorKind;
@@ -28,29 +29,33 @@ public class JfrDriver implements Driver {
 
     private final InterceptorFactory interceptorFactory;
 
-    private final String driverName;
+    private final String driverLabel;
 
     JfrDriver(Driver driver) {
-        this(driver, InterceptorFactory.getDefaultInterceptorFactory(), "Driver#" + labelCounter.incrementAndGet());
+        this(driver, InterceptorManager.getDefaultInterceptorFactory(), "Driver#" + labelCounter.incrementAndGet());
     }
 
     JfrDriver(Driver driver, InterceptorFactory interceptorFactory) {
         this(driver, interceptorFactory, "Driver#" + labelCounter.incrementAndGet());
     }
 
-    JfrDriver(Driver driver, String driverName) {
-        this(driver, InterceptorFactory.getDefaultInterceptorFactory(), driverName);
+    JfrDriver(Driver driver, String driverLabel) {
+        this(driver, InterceptorManager.getDefaultInterceptorFactory(), driverLabel);
     }
 
-    JfrDriver(Driver driver, InterceptorFactory interceptorFactory, String driverName) {
+    JfrDriver(Driver driver, InterceptorFactory interceptorFactory, String driverLabel) {
 
         this.wrappedDriver = driver;
         this.interceptorFactory = interceptorFactory;
-        this.driverName = driverName;
+        this.driverLabel = driverLabel;
 
         ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        this.connectionMonitor = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).getMonitor(driverName);
-        manager.addMonitor(connectionMonitor);
+        ResourceMonitor monitor = manager.getMonitor(driverLabel);
+        if (monitor == null) {
+            monitor = manager.createConnectionMonitor(driver, driverLabel, interceptorFactory);
+            manager.addMonitor(monitor);
+        }
+        this.connectionMonitor = monitor;
     }
 
     @Override
@@ -81,7 +86,7 @@ public class JfrDriver implements Driver {
             this.connectionMonitor.assignedResource();
         }
 
-        return new JfrConnection(delegatedCon, interceptorFactory, this.connectionMonitor, new ConnectionInfo(this.driverName, connectionId, 0));
+        return new JfrConnection(delegatedCon, interceptorFactory, this.connectionMonitor, new ConnectionInfo(this.driverLabel, connectionId, 0));
     }
 
     @Override

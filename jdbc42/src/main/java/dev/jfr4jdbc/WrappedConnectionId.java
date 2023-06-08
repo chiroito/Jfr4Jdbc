@@ -12,9 +12,9 @@ import java.lang.annotation.Target;
 
 @MetadataDefinition
 @Relational
-@Name("dev.jfr4jdbc.DataSourceLabel")
-@Label("DataSource Label")
+@Name("dev.jfr4jdbc.WrappedConnectionId")
+@Label("Wrapped Connection ID")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface DataSourceLavel {
+public @interface WrappedConnectionId {
 }

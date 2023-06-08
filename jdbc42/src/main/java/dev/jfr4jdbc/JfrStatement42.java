@@ -1,9 +1,6 @@
 package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.interceptor.CancelContext;
-import dev.jfr4jdbc.interceptor.Interceptor;
-import dev.jfr4jdbc.interceptor.InterceptorFactory;
-import dev.jfr4jdbc.interceptor.StatementContext;
+import dev.jfr4jdbc.interceptor.*;
 import dev.jfr4jdbc.internal.ConnectionInfo;
 import dev.jfr4jdbc.internal.OperationInfo;
 
@@ -25,7 +22,7 @@ abstract public class JfrStatement42 implements Statement {
     private StringBuilder batchSql;
 
     protected JfrStatement42(Statement s) {
-        this(s, InterceptorFactory.getDefaultInterceptorFactory(), new ConnectionInfo(null, 0, 0), new OperationInfo(0));
+        this(s, InterceptorManager.getDefaultInterceptorFactory(), new ConnectionInfo(null, 0, 0), new OperationInfo(0));
     }
 
     protected JfrStatement42(Statement s, InterceptorFactory factory) {

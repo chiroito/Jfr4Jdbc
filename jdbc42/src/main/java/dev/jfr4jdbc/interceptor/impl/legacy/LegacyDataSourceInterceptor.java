@@ -18,21 +18,22 @@ public class LegacyDataSourceInterceptor implements Interceptor<DataSourceContex
     @Override
     public void preInvoke(DataSourceContext context) {
         this.event = factory.createConnectEvent();
-
-        event.setDataSourceId(context.dataSourceId);
-        event.setDataSourceClass(context.dataSource.getClass());
-        event.setUserName(context.getUsername());
-        event.setPassword(context.getPassword());
         event.begin();
-
     }
 
     @Override
     public void postInvoke(DataSourceContext context) {
-        if (context.getConnection() != null) {
-            event.setConnectionClass(context.getConnection().getClass());
+        event.end();
+        if (event.shouldCommit()) {
+            if (context.getConnection() != null) {
+                event.setConnectionClass(context.getConnection().getClass());
+            }
+            event.setDataSourceId(context.dataSourceId);
+            event.setDataSourceClass(context.dataSource.getClass());
+            event.setUserName(context.getUsername());
+            event.setPassword(context.getPassword());
+            event.setConnectionId(context.getConnectionInfo().conId);
+            event.commit();
         }
-        event.setConnectionId(context.getConnectionInfo().conId);
-        event.commit();
     }
 }

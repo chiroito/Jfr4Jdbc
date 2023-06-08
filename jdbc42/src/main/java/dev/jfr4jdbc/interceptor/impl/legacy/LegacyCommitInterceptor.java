@@ -17,12 +17,15 @@ public class LegacyCommitInterceptor implements Interceptor<CommitContext> {
     @Override
     public void preInvoke(CommitContext context) {
         event = eventFactory.createCommitEvent();
-        event.setConnectionId(context.connectionInfo.conId);
         event.begin();
     }
 
     @Override
     public void postInvoke(CommitContext context) {
-        event.commit();
+        event.end();
+        if (event.shouldCommit()) {
+            event.setConnectionId(context.connectionInfo.conId);
+            event.commit();
+        }
     }
 }

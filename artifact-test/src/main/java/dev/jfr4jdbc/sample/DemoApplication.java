@@ -1,16 +1,20 @@
 package dev.jfr4jdbc.sample;
 
 import dev.jfr4jdbc.JfrDataSource;
+import dev.jfr4jdbc.interceptor.impl.period.PeriodInterceptorFactory;
 import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
 import org.postgresql.ds.PGPoolingDataSource;
 
+import javax.sql.DataSource;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +23,9 @@ import java.util.concurrent.TimeUnit;
 java -XX:StartFlightRecording=disk=true,dumponexit=true,duration=60s,filename=DemoApp.jfr
  */
 public class DemoApplication {
+
+    private static final int TASK_NUM = 10;
+
     public static void main(String[] args) throws Exception {
 
         Configuration c = Configuration.getConfiguration("default");
@@ -37,15 +44,19 @@ public class DemoApplication {
         postgreDs.setUser("postgres");
         postgreDs.setPassword(password);
 
-        JfrDataSource jfrDs = new JfrDataSource(postgreDs);
+        JfrDataSource jfrDs = new JfrDataSource(postgreDs, new PeriodInterceptorFactory());
+        List<Task> taskList = new ArrayList<>(TASK_NUM);
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        for (int i = 0; i < 10; i++) {
-            Task t = new Task(jfrDs.getConnection());
+        for (int i = 0; i < TASK_NUM; i++) {
+            Task t = new Task(jfrDs);
+            taskList.add(t);
             executorService.submit(t);
         }
 
-        TimeUnit.SECONDS.sleep(10);
+        while (taskList.stream().filter(Task::isCompleted).count() != TASK_NUM) {
+            TimeUnit.MILLISECONDS.sleep(100);
+        }
         executorService.shutdownNow();
 
         r.stop();
@@ -55,15 +66,17 @@ public class DemoApplication {
 
 class Task implements Runnable {
 
-    private final Connection con;
+    private volatile boolean completed = false;
 
-    public Task(Connection con) {
-        this.con = con;
+    private final DataSource ds;
+
+    public Task(DataSource ds) {
+        this.ds = ds;
     }
 
     @Override
     public void run() {
-        try (Connection con = this.con;
+        try (Connection con = this.ds.getConnection();
              PreparedStatement stmt = con.prepareStatement("SELECT datname FROM pg_database");
              ResultSet rs = stmt.executeQuery()) {
 
@@ -71,6 +84,12 @@ class Task implements Runnable {
             System.out.println(rs.getString("datname"));
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            completed = true;
         }
+    }
+
+    public boolean isCompleted() {
+        return completed;
     }
 }

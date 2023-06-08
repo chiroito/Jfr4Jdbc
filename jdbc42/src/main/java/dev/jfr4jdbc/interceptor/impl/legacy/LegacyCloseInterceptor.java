@@ -17,12 +17,15 @@ public class LegacyCloseInterceptor implements Interceptor<CloseContext> {
     @Override
     public void preInvoke(CloseContext context) {
         event = eventFactory.createCloseEvent();
-        event.setConnectionId(context.connectionInfo.conId);
         event.begin();
     }
 
     @Override
     public void postInvoke(CloseContext context) {
-        event.commit();
+        event.end();
+        if (event.shouldCommit()) {
+            event.setConnectionId(context.connectionInfo.conId);
+            event.commit();
+        }
     }
 }

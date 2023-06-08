@@ -1,6 +1,7 @@
 package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.internal.ConnectionInfo;
 import dev.jfr4jdbc.internal.OperationInfo;
 
@@ -18,7 +19,7 @@ public class JfrCallableStatement extends JfrPreparedStatement implements Callab
     private CallableStatement jdbcStatement;
 
     public JfrCallableStatement(CallableStatement c, String sql) {
-        this(c, sql, InterceptorFactory.getDefaultInterceptorFactory());
+        this(c, sql, InterceptorManager.getDefaultInterceptorFactory());
     }
 
     public JfrCallableStatement(CallableStatement c, String sql, InterceptorFactory factory) {

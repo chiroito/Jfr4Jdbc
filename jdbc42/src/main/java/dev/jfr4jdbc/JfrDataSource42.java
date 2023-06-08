@@ -3,6 +3,7 @@ package dev.jfr4jdbc;
 import dev.jfr4jdbc.interceptor.DataSourceContext;
 import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.internal.ConnectionInfo;
 import dev.jfr4jdbc.internal.ResourceMonitor;
 import dev.jfr4jdbc.internal.ResourceMonitorKind;
@@ -10,6 +11,8 @@ import dev.jfr4jdbc.internal.ResourceMonitorManager;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -40,11 +43,11 @@ abstract public class JfrDataSource42 implements DataSource {
     private final ResourceMonitor connectionMonitor;
 
     protected JfrDataSource42(DataSource datasource) {
-        this(datasource, InterceptorFactory.getDefaultInterceptorFactory());
+        this(datasource, InterceptorManager.getDefaultInterceptorFactory());
     }
 
     protected JfrDataSource42(DataSource datasource, String monitorLabel) {
-        this(datasource, InterceptorFactory.getDefaultInterceptorFactory(), monitorLabel);
+        this(datasource, InterceptorManager.getDefaultInterceptorFactory(), monitorLabel);
     }
 
     protected JfrDataSource42(DataSource datasource, InterceptorFactory interceptorFactory) {
@@ -61,7 +64,7 @@ abstract public class JfrDataSource42 implements DataSource {
         this.dataSourceLabel = dataSourceLabel;
         this.interceptorFactory = interceptorFactory;
 
-        this.connectionMonitor = new ResourceMonitor(dataSourceLabel);
+        this.connectionMonitor = new ResourceMonitor(this, dataSourceLabel, interceptorFactory);
         ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
         manager.addMonitor(this.connectionMonitor);
     }
@@ -73,7 +76,15 @@ abstract public class JfrDataSource42 implements DataSource {
     Map<Integer, Integer> wrappedConnectionIds = new HashMap<>();
 
     private int getWrappedConnectionId(Connection con) {
-        int objectId = System.identityHashCode(con);
+
+        int objectId = 0;
+
+        if (Proxy.isProxyClass(con.getClass())) {
+            InvocationHandler invocationHandler = Proxy.getInvocationHandler(con);
+            objectId = System.identityHashCode(invocationHandler);
+        } else {
+            objectId = System.identityHashCode(con);
+        }
         Integer wrappedConnectionId = wrappedConnectionIds.computeIfAbsent(objectId, (k) -> wrappedConnectionCounter.getAndIncrement());
 
         return wrappedConnectionId;
@@ -129,7 +140,7 @@ abstract public class JfrDataSource42 implements DataSource {
             this.connectionMonitor.assignedResource();
         }
 
-        String label = this.connectionMonitor.getLabel();
+        String label = this.connectionMonitor.getDataSourceLabel();
         return new JfrConnection(delegatedCon, this.interceptorFactory, this.getResourceMonitor(), new ConnectionInfo(dataSourceLabel, connectionId, context.getConnectionInfo().wrappedConId));
     }
 

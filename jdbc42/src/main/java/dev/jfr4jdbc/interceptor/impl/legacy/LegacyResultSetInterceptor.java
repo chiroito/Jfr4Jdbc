@@ -18,16 +18,19 @@ public class LegacyResultSetInterceptor implements Interceptor<ResultSetContext>
     @Override
     public void preInvoke(ResultSetContext context) {
         event = eventFactory.createResultSetEvent();
-        event.setResultSetId(0);
-        event.setResultSetClass(context.resultSet.getClass());
-        event.setConnectionId(context.connectionInfo.conId);
-        event.setStatementId(context.operationInfo.id);
         event.begin();
     }
 
     @Override
     public void postInvoke(ResultSetContext context) {
-        event.setRowNo(context.getRowNo());
-        event.commit();
+        event.end();
+        if (event.shouldCommit()) {
+            event.setResultSetId(0);
+            event.setResultSetClass(context.resultSet.getClass());
+            event.setConnectionId(context.connectionInfo.conId);
+            event.setStatementId(context.operationInfo.id);
+            event.setRowNo(context.getRowNo());
+            event.commit();
+        }
     }
 }

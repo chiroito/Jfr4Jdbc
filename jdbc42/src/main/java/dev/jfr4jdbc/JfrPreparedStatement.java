@@ -2,6 +2,7 @@ package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.interceptor.StatementContext;
 import dev.jfr4jdbc.internal.ConnectionInfo;
 import dev.jfr4jdbc.internal.OperationInfo;
@@ -24,7 +25,7 @@ public class JfrPreparedStatement extends JfrStatement implements PreparedStatem
     private Set<Parameter> parameters = new TreeSet<>();
 
     public JfrPreparedStatement(PreparedStatement p, String sql) {
-        this(p, sql, InterceptorFactory.getDefaultInterceptorFactory());
+        this(p, sql, InterceptorManager.getDefaultInterceptorFactory());
     }
 
     public JfrPreparedStatement(PreparedStatement p, String sql, InterceptorFactory factory) {

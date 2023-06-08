@@ -2,6 +2,7 @@ package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
+import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.interceptor.ResultSetContext;
 import dev.jfr4jdbc.internal.ConnectionInfo;
 import dev.jfr4jdbc.internal.OperationInfo;
@@ -26,7 +27,7 @@ public class JfrResultSet implements ResultSet {
 
 
     public JfrResultSet(ResultSet resultSet) {
-        this(resultSet, InterceptorFactory.getDefaultInterceptorFactory());
+        this(resultSet, InterceptorManager.getDefaultInterceptorFactory());
     }
 
     public JfrResultSet(ResultSet resultSet, InterceptorFactory factory) {

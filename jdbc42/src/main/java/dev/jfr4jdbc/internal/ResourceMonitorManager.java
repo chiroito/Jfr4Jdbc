@@ -1,5 +1,9 @@
 package dev.jfr4jdbc.internal;
 
+import dev.jfr4jdbc.interceptor.InterceptorFactory;
+
+import javax.sql.DataSource;
+import java.sql.Driver;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +19,31 @@ public class ResourceMonitorManager {
     }
 
     public ResourceMonitor getMonitor(String label) {
-        return this.monitors.computeIfAbsent(label, id -> new ResourceMonitor(id));
+        return this.monitors.get(label);
+    }
+
+    public ResourceMonitor createConnectionMonitor(DataSource dataSource, String dataSourceLabel, InterceptorFactory factory) {
+        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
+        ResourceMonitor resourceMonitor = new ResourceMonitor(dataSource, dataSourceLabel, factory);
+        manager.addMonitor(resourceMonitor);
+
+        return resourceMonitor;
+    }
+
+    public ResourceMonitor createConnectionMonitor(Driver driver, String dataSourceLabel, InterceptorFactory factory) {
+        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
+        ResourceMonitor resourceMonitor = new ResourceMonitor(driver, dataSourceLabel, factory);
+        manager.addMonitor(resourceMonitor);
+
+        return resourceMonitor;
+    }
+
+    public ResourceMonitor createConnectionMonitor(String dataSourceLabel, InterceptorFactory factory) {
+        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
+        ResourceMonitor resourceMonitor = new ResourceMonitor(null, null, dataSourceLabel, factory);
+        manager.addMonitor(resourceMonitor);
+
+        return resourceMonitor;
     }
 
     public List<ResourceMonitor> getMonitors() {
@@ -23,10 +51,10 @@ public class ResourceMonitorManager {
     }
 
     public void addMonitor(ResourceMonitor monitor) {
-        this.monitors.put(monitor.getLabel(), monitor);
+        this.monitors.put(monitor.getDataSourceLabel(), monitor);
     }
 
     public void removeMonitor(ResourceMonitor monitor) {
-        this.monitors.remove(monitor.getLabel());
+        this.monitors.remove(monitor.getDataSourceLabel());
     }
 }

@@ -2,6 +2,7 @@ package dev.jfr4jdbc.interceptor.impl.legacy;
 
 import dev.jfr4jdbc.EventFactory;
 import dev.jfr4jdbc.interceptor.*;
+import dev.jfr4jdbc.interceptor.impl.ResourceMonitorInterceptor;
 
 public class LegacyInterceptorFactory implements InterceptorFactory {
 
@@ -53,5 +54,10 @@ public class LegacyInterceptorFactory implements InterceptorFactory {
     @Override
     public Interceptor<ResultSetContext> createResultSetInterceptor() {
         return new LegacyResultSetInterceptor(this.eventFactory);
+    }
+
+    @Override
+    public Interceptor<ResourceMonitorContext> createResourceMonitorInterceptor() {
+        return new ResourceMonitorInterceptor();
     }
 }

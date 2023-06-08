@@ -65,7 +65,7 @@ public class JfrResourceMonitorTest {
         ResourceMonitor.recordResourceMonitor(manager);
         fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").startsWith("Connection"));
+        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("userManagedConnection"));
         assertTrue(events.size() > 0);
     }
 

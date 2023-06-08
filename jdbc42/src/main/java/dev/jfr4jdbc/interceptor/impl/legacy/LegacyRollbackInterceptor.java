@@ -18,12 +18,15 @@ public class LegacyRollbackInterceptor implements Interceptor<RollbackContext> {
     @Override
     public void preInvoke(RollbackContext context) {
         event = eventFactory.createRollbackEvent();
-        event.setConnectionId(context.connectionInfo.conId);
         event.begin();
     }
 
     @Override
     public void postInvoke(RollbackContext context) {
-        event.commit();
+        event.end();
+        if (event.shouldCommit()) {
+            event.setConnectionId(context.connectionInfo.conId);
+            event.commit();
+        }
     }
 }
