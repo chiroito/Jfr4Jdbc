@@ -11,7 +11,7 @@ import jdk.jfr.Label;
 @Label("ResultSetStart")
 public class ResultSetEndEvent extends Event {
 
-    public long duration;
+    public long period;
 
     @DataSourceLabel
     public String dataSourceLabel;

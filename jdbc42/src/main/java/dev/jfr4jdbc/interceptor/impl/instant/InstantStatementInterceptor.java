@@ -33,7 +33,7 @@ public class InstantStatementInterceptor implements Interceptor<StatementContext
         long end = System.nanoTime();
         StatementEndEvent event = new StatementEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.connectionInfo;
             event.dataSourceLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

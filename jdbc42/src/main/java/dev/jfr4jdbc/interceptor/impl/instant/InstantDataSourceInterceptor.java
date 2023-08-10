@@ -27,7 +27,7 @@ public class InstantDataSourceInterceptor implements Interceptor<DataSourceConte
         long end = System.nanoTime();
         DataSourceEndEvent event = new DataSourceEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.getConnectionInfo();
             event.dataSourceLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

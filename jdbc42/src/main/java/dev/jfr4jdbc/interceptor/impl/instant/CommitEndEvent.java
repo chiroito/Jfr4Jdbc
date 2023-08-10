@@ -11,7 +11,7 @@ import jdk.jfr.Label;
 @Label("CommitStart")
 public class CommitEndEvent extends Event {
 
-    public long duration;
+    public long period;
 
     @DataSourceLabel
     public String dataSourceLabel;

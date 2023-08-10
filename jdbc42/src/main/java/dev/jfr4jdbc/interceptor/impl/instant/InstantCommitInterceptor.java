@@ -27,7 +27,7 @@ public class InstantCommitInterceptor implements Interceptor<CommitContext> {
         long end = System.nanoTime();
         CommitEndEvent event = new CommitEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.connectionInfo;
             event.dataSourceLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

@@ -27,7 +27,7 @@ public class InstantResultSetInterceptor implements Interceptor<ResultSetContext
         long end = System.nanoTime();
         ResultSetEndEvent event = new ResultSetEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.connectionInfo;
             event.dataSourceLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

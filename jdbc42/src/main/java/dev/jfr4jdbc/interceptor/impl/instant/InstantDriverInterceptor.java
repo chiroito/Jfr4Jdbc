@@ -26,7 +26,7 @@ public class InstantDriverInterceptor implements Interceptor<DriverContext> {
         long end = System.nanoTime();
         DriverEndEvent event = new DriverEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.getConnectionInfo();
             event.driverLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

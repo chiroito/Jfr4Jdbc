@@ -15,7 +15,7 @@ public class InterceptorManager {
     private static InterceptorFactory defaultInterceptorFactory;
 
     static {
-        String defaultInterceptorParameter = System.getenv(DEFAULT_INTERCEPTOR_FACTORY_ENV_NAME);
+        String defaultInterceptorParameter = System.getProperty(DEFAULT_INTERCEPTOR_FACTORY_ENV_NAME);
         defaultInterceptorFactory = getInterceptorFactory(defaultInterceptorParameter);
     }
 

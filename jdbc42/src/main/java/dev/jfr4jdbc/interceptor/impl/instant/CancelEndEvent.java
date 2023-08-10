@@ -11,7 +11,7 @@ import jdk.jfr.Label;
 @Label("CancelEnd")
 public class CancelEndEvent extends Event {
 
-    public long duration;
+    public long period;
 
     @DataSourceLabel
     public String dataSourceLabel;

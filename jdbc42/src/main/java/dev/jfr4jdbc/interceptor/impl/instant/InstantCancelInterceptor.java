@@ -27,7 +27,7 @@ public class InstantCancelInterceptor implements Interceptor<CancelContext> {
         long end = System.nanoTime();
         CancelEndEvent event = new CancelEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.connectionInfo;
             event.dataSourceLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

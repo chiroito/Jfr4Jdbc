@@ -27,7 +27,7 @@ public class InstantRollbackInterceptor implements Interceptor<RollbackContext> 
         long end = System.nanoTime();
         RollbackEndEvent event = new RollbackEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.connectionInfo;
             event.dataSourceLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

@@ -11,7 +11,7 @@ import jdk.jfr.Label;
 @Label("CloseStart")
 public class CloseEndEvent extends Event {
 
-    public long duration;
+    public long period;
 
     @DataSourceLabel
     public String dataSourceLabel;

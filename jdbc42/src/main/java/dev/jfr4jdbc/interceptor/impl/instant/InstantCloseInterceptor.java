@@ -27,7 +27,7 @@ public class InstantCloseInterceptor implements Interceptor<CloseContext> {
         long end = System.nanoTime();
         CloseEndEvent event = new CloseEndEvent();
         if (event.isEnabled()) {
-            event.duration = end - start;
+            event.period = end - start;
             ConnectionInfo conInfo = context.connectionInfo;
             event.dataSourceLabel = conInfo.dataSourceLabel;
             event.connectionId = conInfo.conId;

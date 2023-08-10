@@ -10,7 +10,7 @@ import jdk.jfr.Label;
 @Label("DriverStart")
 public class DriverEndEvent extends Event {
 
-    public long duration;
+    public long period;
 
     @DataSourceLabel
     public String driverLabel;
