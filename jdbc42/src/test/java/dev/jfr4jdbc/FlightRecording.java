@@ -34,6 +34,7 @@ public class FlightRecording {
             fr.recording.enable(JfrConnectionEvent.class);
             fr.recording.enable(JfrResultSetEvent.class);
             fr.recording.enable(JfrRollbackEvent.class);
+            fr.recording.enable(JfrSavepointEvent.class);
             fr.recording.enable(JfrStatementEvent.class);
             fr.recording.disable(JfrConnectionResourceEvent.class);
             fr.recording.start();
@@ -56,6 +57,7 @@ public class FlightRecording {
             recording.disable(JfrConnectionEvent.class);
             recording.disable(JfrResultSetEvent.class);
             recording.disable(JfrRollbackEvent.class);
+            recording.disable(JfrSavepointEvent.class);
             recording.disable(JfrStatementEvent.class);
             recording.dump(this.dumpFilePath);
             recording.stop();

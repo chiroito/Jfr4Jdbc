@@ -7,6 +7,7 @@ import dev.jfr4jdbc.JfrStatement;
 import dev.jfr4jdbc.event.CloseEvent;
 import dev.jfr4jdbc.event.CommitEvent;
 import dev.jfr4jdbc.event.RollbackEvent;
+import dev.jfr4jdbc.event.SavepointEvent;
 
 import java.sql.*;
 import java.util.Map;
@@ -261,22 +262,64 @@ abstract public class JfrConnection42 implements Connection {
 
     @Override
     public Savepoint setSavepoint() throws SQLException {
-        return this.connection.setSavepoint();
+        SavepointEvent savepointEvent = this.factory.createSavepointEvent("create");
+        savepointEvent.begin();
+        Savepoint savepoint;
+        try {
+            savepoint = this.connection.setSavepoint();
+            savepointEvent.setId(savepoint.getSavepointId());
+        } finally {
+            savepointEvent.commit();
+        }
+        return new JfrSavepoint(savepoint, false);
     }
 
     @Override
     public Savepoint setSavepoint(String name) throws SQLException {
-        return this.connection.setSavepoint(name);
+        SavepointEvent event = this.factory.createSavepointEvent("create");
+        event.begin();
+        Savepoint savepoint;
+        try {
+            savepoint = this.connection.setSavepoint(name);
+            event.setName(savepoint.getSavepointName());
+        } finally {
+            event.commit();
+        }
+        return new JfrSavepoint(savepoint, true);
     }
 
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
-        this.connection.rollback(savepoint);
+        if (savepoint instanceof JfrSavepoint) {
+            finishSavepoint((JfrSavepoint) savepoint, "rollback", this.connection::rollback);
+        } else {
+            this.connection.rollback(savepoint);
+        }
     }
 
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-        this.connection.releaseSavepoint(savepoint);
+        if (savepoint instanceof JfrSavepoint) {
+            finishSavepoint((JfrSavepoint) savepoint, "release", this.connection::releaseSavepoint);
+        } else {
+            this.connection.releaseSavepoint(savepoint);
+        }
+    }
+
+    private void finishSavepoint(JfrSavepoint savepoint, String action, SavepointReleaser releaser) throws SQLException {
+        SavepointEvent event = this.factory.createSavepointEvent(action);
+        if (savepoint.isNamed) {
+            event.setName(savepoint.getSavepointName());
+        } else {
+            event.setId(savepoint.getSavepointId());
+        }
+
+        event.begin();
+        try {
+            releaser.release(savepoint.jdbcSavepoint);
+        } finally {
+            event.commit();
+        }
     }
 
     @Override
@@ -357,5 +400,10 @@ abstract public class JfrConnection42 implements Connection {
     @Override
     public int getNetworkTimeout() throws SQLException {
         return this.connection.getNetworkTimeout();
+    }
+
+    @FunctionalInterface
+    private interface SavepointReleaser {
+        void release(Savepoint savepoint) throws SQLException;
     }
 }

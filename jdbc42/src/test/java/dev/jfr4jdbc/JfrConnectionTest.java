@@ -10,10 +10,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @TestClassOrder(ClassOrderer.OrderAnnotation.class)
@@ -204,6 +205,45 @@ class JfrConnectionTest {
         assertEquals(1, events.size());
         RecordedEvent event = events.get(0);
         assertEquals(connection.getConnectionId(), event.getInt("connectionId"));
+    }
+
+    @DisplayName("create SavepointEvents")
+    @Test
+    void createSavepointEvents() throws Exception {
+        int savepointId = 42;
+        String savepointName = "Named";
+        Savepoint savepoint = mock(Savepoint.class);
+        when(savepoint.getSavepointId()).thenReturn(savepointId);
+        when(savepoint.getSavepointName()).thenReturn(savepointName);
+        when(this.delegatedCon.setSavepoint()).thenReturn(savepoint);
+        when(this.delegatedCon.setSavepoint(savepointName)).thenReturn(savepoint);
+
+        FlightRecording fr = FlightRecording.start();
+        try (JfrConnection connection = new JfrConnection(this.delegatedCon)) {
+            Savepoint byId = connection.setSavepoint();
+            Savepoint byName = connection.setSavepoint(savepointName);
+            connection.rollback(byId);
+            connection.releaseSavepoint(byName);
+        }
+        fr.stop();
+
+        List<RecordedEvent> events = fr.getEvents("Savepoint");
+        assertEquals(4, events.size());
+        RecordedEvent event = events.get(0);
+        assertEquals("create", event.getString("action"));
+        assertEquals(savepointId, event.getInt("id"));
+
+        event = events.get(1);
+        assertEquals("create", event.getString("action"));
+        assertEquals(savepointName, event.getString("name"));
+
+        event = events.get(2);
+        assertEquals("rollback", event.getString("action"));
+        assertEquals(savepointId, event.getInt("id"));
+
+        event = events.get(3);
+        assertEquals("release", event.getString("action"));
+        assertEquals(savepointName, event.getString("name"));
     }
 
     @Test
@@ -513,6 +553,10 @@ class JfrConnectionTest {
 
     @Test
     void setSavepoint() throws SQLException {
+        int savepointId = 42;
+        Savepoint savepoint = mock(Savepoint.class);
+        when(savepoint.getSavepointId()).thenReturn(savepointId);
+        when(this.delegatedCon.setSavepoint()).thenReturn(savepoint);
         try (Connection con = new JfrConnection(this.delegatedCon)) {
             con.setSavepoint();
         }
@@ -522,11 +566,15 @@ class JfrConnectionTest {
 
     @Test
     void setSavepoint1() throws SQLException {
+        String savepointName = "Named";
+        Savepoint savepoint = mock(Savepoint.class);
+        when(savepoint.getSavepointName()).thenReturn(savepointName);
+        when(this.delegatedCon.setSavepoint(savepointName)).thenReturn(savepoint);
         try (Connection con = new JfrConnection(this.delegatedCon)) {
-            con.setSavepoint(null);
+            con.setSavepoint(savepointName);
         }
 
-        verify(this.delegatedCon).setSavepoint(null);
+        verify(this.delegatedCon).setSavepoint(savepointName);
     }
 
     @Test
