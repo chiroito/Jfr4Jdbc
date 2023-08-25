@@ -24,6 +24,11 @@ public abstract class EventFactory {
     public abstract ResultSetEvent createResultSetEvent();
 
     public abstract RollbackEvent createRollbackEvent();
+
+    /**
+     * @param action One of: {@code create}, {@code rollback}, or {@code release}.
+     */
+    public abstract SavepointEvent createSavepointEvent(String action);
 }
 
 class JfrEventFactory extends EventFactory {
@@ -61,5 +66,10 @@ class JfrEventFactory extends EventFactory {
     @Override
     public RollbackEvent createRollbackEvent() {
         return new JfrRollbackEvent();
+    }
+
+    @Override
+    public SavepointEvent createSavepointEvent(String action) {
+        return new JfrSavepointEvent(action);
     }
 }
