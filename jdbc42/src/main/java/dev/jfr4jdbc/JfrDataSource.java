@@ -10,15 +10,15 @@ public class JfrDataSource extends JfrDataSource42 implements DataSource {
         super(datasource);
     }
 
-    public JfrDataSource(DataSource datasource, String monitorLabel) {
-        super(datasource, monitorLabel);
+    public JfrDataSource(DataSource datasource, String label) {
+        super(datasource, label);
     }
 
     public JfrDataSource(DataSource datasource, InterceptorFactory factory) {
         super(datasource, factory);
     }
 
-    public JfrDataSource(DataSource datasource, InterceptorFactory factory, String monitorLabel) {
-        super(datasource, factory, monitorLabel);
+    public JfrDataSource(DataSource datasource, InterceptorFactory factory, String label) {
+        super(datasource, factory, label);
     }
 }

@@ -11,52 +11,57 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 abstract public class JfrConnection42 implements Connection {
 
+    private static final String LABEL_IS_NOT_SPECIFIED = "userManagedConnection";
+
     protected final Connection connection;
 
     private final ConnectionInfo connectionInfo;
 
     private final InterceptorFactory interceptorFactory;
 
-    private final ResourceMonitor connectionMonitor;
+    private final ResourceMonitor resourceMonitor;
 
     private final AtomicInteger operationCounter = new AtomicInteger(1);
 
     protected JfrConnection42(Connection con) {
-        this(con, InterceptorManager.getDefaultInterceptorFactory(), "userManagedConnection", new ConnectionInfo(null, 0, 0));
+        this(con, InterceptorManager.getDefaultInterceptorFactory(), LABEL_IS_NOT_SPECIFIED, ConnectionInfo.NO_INFO);
     }
 
-    protected JfrConnection42(Connection con, String dataSourceLabel) {
-        this(con, InterceptorManager.getDefaultInterceptorFactory(), dataSourceLabel, new ConnectionInfo(dataSourceLabel, 0, 0));
+    protected JfrConnection42(Connection con, String label) {
+        this(con, InterceptorManager.getDefaultInterceptorFactory(), label, ConnectionInfo.NO_INFO);
     }
 
     protected JfrConnection42(Connection con, InterceptorFactory factory) {
-        this(con, factory, "userManagedConnection", new ConnectionInfo(null, 0, 0));
+        this(con, factory, LABEL_IS_NOT_SPECIFIED, ConnectionInfo.NO_INFO);
     }
 
-    protected JfrConnection42(Connection con, InterceptorFactory factory, String dataSourceLabel) {
-        this(con, factory, dataSourceLabel, new ConnectionInfo(dataSourceLabel, 0, 0));
+    protected JfrConnection42(Connection con, InterceptorFactory factory, String label) {
+        this(con, factory, label, ConnectionInfo.NO_INFO);
     }
 
     private JfrConnection42(Connection con, InterceptorFactory factory, String label, ConnectionInfo connectionInfo) {
         super();
         this.connection = con;
         this.interceptorFactory = factory;
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        this.connectionMonitor = manager.createConnectionMonitor(label, factory);
+        this.resourceMonitor = ResourceMonitorManager.getInstance().getOrCreateResourceMonitor(new Label(label));
         this.connectionInfo = connectionInfo;
 
-        this.connectionMonitor.useResource();
+        this.resourceMonitor.useResource();
     }
 
 
-    public JfrConnection42(Connection con, InterceptorFactory factory, ResourceMonitor connectionMonitor, ConnectionInfo connectionInfo) {
+    public JfrConnection42(Connection con, InterceptorFactory factory, ResourceMonitor resourceMonitor, ConnectionInfo connectionInfo) {
         super();
         this.connection = con;
         this.interceptorFactory = factory;
-        this.connectionMonitor = connectionMonitor;
+        this.resourceMonitor = resourceMonitor;
         this.connectionInfo = connectionInfo;
 
-        this.connectionMonitor.useResource();
+        this.resourceMonitor.useResource();
+    }
+
+    public ResourceMetrics getResourceMetrics() {
+        return this.resourceMonitor.getMetrics();
     }
 
     private JfrStatement createStatement(Statement s) {
@@ -119,7 +124,7 @@ abstract public class JfrConnection42 implements Connection {
             throw e;
         } finally {
             interceptor.postInvoke(context);
-            this.connectionMonitor.releaseResource();
+            this.resourceMonitor.releaseResource();
         }
     }
 

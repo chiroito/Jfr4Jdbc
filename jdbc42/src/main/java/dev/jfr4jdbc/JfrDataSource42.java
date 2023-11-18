@@ -5,8 +5,8 @@ import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
 import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.Label;
 import dev.jfr4jdbc.internal.ResourceMonitor;
-import dev.jfr4jdbc.internal.ResourceMonitorKind;
 import dev.jfr4jdbc.internal.ResourceMonitorManager;
 
 import javax.sql.DataSource;
@@ -23,9 +23,9 @@ import java.util.logging.Logger;
 
 abstract public class JfrDataSource42 implements DataSource {
 
-    private static final AtomicInteger labelCounter = new AtomicInteger(0);
+    private static final AtomicInteger defaultLabelCounter = new AtomicInteger(0);
 
-    private static final AtomicInteger dataSourceCounter = new AtomicInteger(1);
+    private static final AtomicInteger dataSourceIdCounter = new AtomicInteger(1);
 
     private final AtomicInteger connectionCounter = new AtomicInteger(1);
 
@@ -36,41 +36,39 @@ abstract public class JfrDataSource42 implements DataSource {
     @Deprecated
     private final int datasourceId;
 
-    protected final String dataSourceLabel;
+    protected final String label;
 
     private final InterceptorFactory interceptorFactory;
 
-    private final ResourceMonitor connectionMonitor;
+    private final ResourceMonitor resourceMonitor;
 
     protected JfrDataSource42(DataSource datasource) {
         this(datasource, InterceptorManager.getDefaultInterceptorFactory());
     }
 
-    protected JfrDataSource42(DataSource datasource, String monitorLabel) {
-        this(datasource, InterceptorManager.getDefaultInterceptorFactory(), monitorLabel);
+    protected JfrDataSource42(DataSource datasource, String label) {
+        this(datasource, InterceptorManager.getDefaultInterceptorFactory(), label);
     }
 
     protected JfrDataSource42(DataSource datasource, InterceptorFactory interceptorFactory) {
-        this(datasource, interceptorFactory, "DataSource#" + labelCounter.incrementAndGet());
+        this(datasource, interceptorFactory, "DataSource#" + defaultLabelCounter.incrementAndGet());
     }
 
-    protected JfrDataSource42(DataSource datasource, InterceptorFactory interceptorFactory, String dataSourceLabel) {
+    protected JfrDataSource42(DataSource datasource, InterceptorFactory interceptorFactory, String label) {
         super();
         if (datasource == null) {
             throw new Jfr4JdbcRuntimeException("No delegate DataSource");
         }
         this.datasource = datasource;
-        this.datasourceId = dataSourceCounter.getAndIncrement();
-        this.dataSourceLabel = dataSourceLabel;
+        this.datasourceId = dataSourceIdCounter.getAndIncrement();
+        this.label = label;
         this.interceptorFactory = interceptorFactory;
 
-        this.connectionMonitor = new ResourceMonitor(this, dataSourceLabel, interceptorFactory);
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        manager.addMonitor(this.connectionMonitor);
+        this.resourceMonitor = ResourceMonitorManager.getInstance().getOrCreateResourceMonitor(new Label(label));
     }
 
-    public ResourceMonitor getResourceMonitor() {
-        return this.connectionMonitor;
+    public ResourceMetrics getResourceMetrics() {
+        return this.resourceMonitor.getMetrics();
     }
 
     Map<Integer, Integer> wrappedConnectionIds = new HashMap<>();
@@ -95,25 +93,24 @@ abstract public class JfrDataSource42 implements DataSource {
 
         int connectionId = this.connectionCounter.getAndIncrement();
         Interceptor<DataSourceContext> interceptor = this.interceptorFactory.createDataSourceInterceptor();
-        DataSourceContext context = new DataSourceContext(this.datasource, new ConnectionInfo(dataSourceLabel, connectionId, 0), this.datasourceId);
+        DataSourceContext context = new DataSourceContext(this.datasource, new ConnectionInfo(label, connectionId, 0), this.datasourceId);
 
         Connection delegatedCon = null;
         try {
-            this.connectionMonitor.waitAssigningResource();
+            this.resourceMonitor.waitAssigningResource();
 
             interceptor.preInvoke(context);
             delegatedCon = this.datasource.getConnection();
             context.setConnection(delegatedCon, getWrappedConnectionId(delegatedCon));
-
         } catch (SQLException | RuntimeException e) {
             context.setException(e);
             throw e;
         } finally {
             interceptor.postInvoke(context);
-            this.connectionMonitor.assignedResource();
+            this.resourceMonitor.assignedResource();
         }
 
-        return new JfrConnection(delegatedCon, this.interceptorFactory, this.getResourceMonitor(), new ConnectionInfo(dataSourceLabel, connectionId, context.getConnectionInfo().wrappedConId));
+        return new JfrConnection(delegatedCon, this.interceptorFactory, this.resourceMonitor, context.getConnectionInfo());
     }
 
     @Override
@@ -121,12 +118,12 @@ abstract public class JfrDataSource42 implements DataSource {
 
         int connectionId = this.connectionCounter.getAndIncrement();
         Interceptor<DataSourceContext> interceptor = this.interceptorFactory.createDataSourceInterceptor();
-        DataSourceContext context = new DataSourceContext(this.datasource, new ConnectionInfo(dataSourceLabel, connectionId, 0), this.datasourceId);
+        DataSourceContext context = new DataSourceContext(this.datasource, new ConnectionInfo(label, connectionId, 0), this.datasourceId);
         context.setAuth(username, password);
 
         Connection delegatedCon = null;
         try {
-            this.connectionMonitor.waitAssigningResource();
+            this.resourceMonitor.waitAssigningResource();
 
             interceptor.preInvoke(context);
             delegatedCon = this.datasource.getConnection(username, password);
@@ -137,11 +134,11 @@ abstract public class JfrDataSource42 implements DataSource {
             throw e;
         } finally {
             interceptor.postInvoke(context);
-            this.connectionMonitor.assignedResource();
+            this.resourceMonitor.assignedResource();
         }
 
-        String label = this.connectionMonitor.getDataSourceLabel();
-        return new JfrConnection(delegatedCon, this.interceptorFactory, this.getResourceMonitor(), new ConnectionInfo(dataSourceLabel, connectionId, context.getConnectionInfo().wrappedConId));
+        Label label = this.resourceMonitor.getLabel();
+        return new JfrConnection(delegatedCon, this.interceptorFactory, this.resourceMonitor, new ConnectionInfo(this.label, connectionId, context.getConnectionInfo().wrappedConId));
     }
 
     @Override

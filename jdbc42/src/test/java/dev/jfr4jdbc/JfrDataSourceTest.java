@@ -1,8 +1,9 @@
 package dev.jfr4jdbc;
 
-import dev.jfr4jdbc.internal.ResourceMonitorKind;
-import dev.jfr4jdbc.internal.ResourceMonitorManager;
-import jdk.jfr.consumer.RecordedEvent;
+import dev.jfr4jdbc.interceptor.DataSourceContext;
+import dev.jfr4jdbc.interceptor.MockInterceptor;
+import dev.jfr4jdbc.interceptor.MockInterceptorFactory;
+import dev.jfr4jdbc.internal.ConnectionInfo;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -48,7 +49,6 @@ class JfrDataSourceTest {
         }
 
         verify(delegatedDs).getConnection();
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
     }
 
     @DisplayName("getConnection to create ConnectionEvent")
@@ -56,26 +56,30 @@ class JfrDataSourceTest {
     void getConnectionConnectEvent() throws Exception {
         when(delegatedDs.getConnection()).thenReturn(delegatedCon);
 
-        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs, mockInterceptorFactory, "ds");
+
         try (Connection con = dataSource.getConnection()) {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
         // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
-        assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
-        assertTrue(connectionEvent.getString("dataSourceClass") != null);
-        assertTrue(connectionEvent.getString("connectionClass") != null);
-        assertTrue(connectionEvent.getInt("connectionId") > 0);
-        assertEquals(connectionEvent.getString("url"), null);
+        MockInterceptor<DataSourceContext> interceptor = mockInterceptorFactory.createDataSourceInterceptor();
+        List<DataSourceContext> events = interceptor.getAllPostEvents();
+        assertEquals(1, events.size());
+
+        DataSourceContext event = events.get(0);
+        assertNotNull(event.dataSource);
+        assertTrue(event.dataSourceId > 0);
+        assertNotNull(event.dataSource);
+        assertNull(event.getUsername());
+        assertNull(event.getPassword());
+        assertNotNull(event.getConnection());
+        assertEquals("ds", event.getConnectionInfo().dataSourceLabel);
+        assertEquals(1, event.getConnectionInfo().conId);
+        assertEquals(1, event.getConnectionInfo().wrappedConId);
     }
 
     @DisplayName("getConnection to create ConnectionEvent throw exception as expected")
@@ -83,9 +87,9 @@ class JfrDataSourceTest {
     void getConnectionConnectEventThrowSQLException() throws Exception {
         when(delegatedDs.getConnection()).thenThrow(new SQLException());
 
-        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs, mockInterceptorFactory, "ds");
+
         try (Connection con = dataSource.getConnection()) {
             fail();
         } catch (SQLException e) {
@@ -93,19 +97,22 @@ class JfrDataSourceTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
         // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
-        assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
-        assertTrue(connectionEvent.getString("dataSourceClass") != null);
-        assertEquals(connectionEvent.getString("connectionClass"), null);
-        assertEquals(1, connectionEvent.getInt("connectionId"));
-        assertEquals(connectionEvent.getString("url"), null);
+        MockInterceptor<DataSourceContext> interceptor = mockInterceptorFactory.createDataSourceInterceptor();
+        List<DataSourceContext> events = interceptor.getAllPostEvents();
+        assertEquals(1, events.size());
+
+        DataSourceContext event = events.get(0);
+        assertTrue(event.dataSourceId > 0);
+        assertNotNull(event.dataSource);
+        assertNull(event.getUsername());
+        assertNull(event.getPassword());
+        assertNull(event.getConnection());
+        assertEquals("ds", event.getConnectionInfo().dataSourceLabel);
+        assertEquals(1, event.getConnectionInfo().conId);
+        assertEquals(0, event.getConnectionInfo().wrappedConId);
     }
 
     @DisplayName("getConnection to create ConnectionEvent throw exception as unexpected")
@@ -113,9 +120,9 @@ class JfrDataSourceTest {
     void getConnectionConnectEventThrowRuntimeException() throws Exception {
         when(delegatedDs.getConnection()).thenThrow(new RuntimeException());
 
-        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs, mockInterceptorFactory, "ds");
+
         try (Connection con = dataSource.getConnection()) {
             fail();
         } catch (RuntimeException e) {
@@ -123,19 +130,20 @@ class JfrDataSourceTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
         // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
-        assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
-        assertTrue(connectionEvent.getString("dataSourceClass") != null);
-        assertEquals(connectionEvent.getString("connectionClass"), null);
-        assertEquals(1, connectionEvent.getInt("connectionId"));
-        assertEquals(connectionEvent.getString("url"), null);
+        MockInterceptor<DataSourceContext> interceptor = mockInterceptorFactory.createDataSourceInterceptor();
+        List<DataSourceContext> events = interceptor.getAllPostEvents();
+        assertEquals(1, events.size());
+
+        DataSourceContext event = events.get(0);
+        assertTrue(event.dataSourceId > 0);
+        assertNotNull(event.dataSource);
+        assertNull(event.getUsername());
+        assertNull(event.getPassword());
+        assertNull(event.getConnection());
+        assertNotNull(event.getConnectionInfo());
     }
 
     @DisplayName("getConnection with User/Password")
@@ -146,7 +154,6 @@ class JfrDataSourceTest {
         final String password = "PasswordY";
 
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         try (Connection con = dataSource.getConnection(user, password)) {
         } catch (Exception e) {
             e.printStackTrace();
@@ -163,29 +170,26 @@ class JfrDataSourceTest {
         when(delegatedDs.getConnection(any(), any())).thenReturn(delegatedCon);
         final String user = "UserX";
         final String password = "PasswordY";
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs, mockInterceptorFactory);
 
-        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
-        FlightRecording fr = FlightRecording.start();
         try (Connection con = dataSource.getConnection(user, password)) {
         } catch (Exception e) {
-            e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
-        assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
-        assertTrue(connectionEvent.getString("dataSourceClass") != null);
-        assertTrue(connectionEvent.getString("connectionClass") != null);
-        assertTrue(connectionEvent.getInt("connectionId") > 0);
-        assertTrue(connectionEvent.getString("userName").equals(user));
-        assertTrue(connectionEvent.getString("password").equals(password));
-        assertEquals(connectionEvent.getString("url"), null);
+        MockInterceptor<DataSourceContext> interceptor = mockInterceptorFactory.createDataSourceInterceptor();
+        List<DataSourceContext> events = interceptor.getAllPostEvents();
+        assertEquals(1, events.size());
+        DataSourceContext event = events.get(0);
+        assertTrue(event.dataSourceId > 0);
+        assertNotNull(event.dataSource);
+        assertEquals(user, event.getUsername());
+        assertEquals(password, event.getPassword());
+        assertNotNull(event.getConnection());
+        assertNotNull(event.getConnectionInfo());
+        assertNotEquals(ConnectionInfo.NO_INFO, event.getConnectionInfo());
+        assertNull(event.getException());
     }
 
     @DisplayName("getConnection to create ConnectionEvent with User/Password throw exception as expected")
@@ -195,31 +199,31 @@ class JfrDataSourceTest {
         final String user = "UserX";
         final String password = "PasswordY";
 
-        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs, mockInterceptorFactory);
+        Exception exception = null;
         try (Connection con = dataSource.getConnection(user, password)) {
             fail();
         } catch (SQLException e) {
-
+            exception = e;
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
-        assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
-        assertTrue(connectionEvent.getString("dataSourceClass") != null);
-        assertEquals(connectionEvent.getString("connectionClass"), null);
-        assertEquals(1, connectionEvent.getInt("connectionId"));
-        assertTrue(connectionEvent.getString("userName").equals(user));
-        assertTrue(connectionEvent.getString("password").equals(password));
-        assertEquals(connectionEvent.getString("url"), null);
+        MockInterceptor<DataSourceContext> interceptor = mockInterceptorFactory.createDataSourceInterceptor();
+        List<DataSourceContext> events = interceptor.getAllPostEvents();
+        assertEquals(1, events.size());
+        DataSourceContext event = events.get(0);
+        assertTrue(event.dataSourceId > 0);
+        assertNotNull(event.dataSource);
+        assertEquals(user, event.getUsername());
+        assertEquals(password, event.getPassword());
+        assertNull(event.getConnection());
+        assertNotNull(event.getConnectionInfo());
+        assertNotEquals(ConnectionInfo.NO_INFO, event.getConnectionInfo());
+        assertNotNull(event.getException());
+        assertEquals(SQLException.class, exception.getClass());
     }
 
     @DisplayName("getConnection to create ConnectionEvent with User/Password throw exception as unexpected")
@@ -229,38 +233,37 @@ class JfrDataSourceTest {
         final String user = "UserX";
         final String password = "PasswordY";
 
-        JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrDataSource dataSource = new JfrDataSource(delegatedDs, mockInterceptorFactory);
+        Exception exception = null;
         try (Connection con = dataSource.getConnection(user, password)) {
             fail();
         } catch (RuntimeException e) {
-
+            exception = e;
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
-        assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertTrue(connectionEvent.getInt("dataSourceId") > 0);
-        assertTrue(connectionEvent.getString("dataSourceClass") != null);
-        assertEquals(connectionEvent.getString("connectionClass"), null);
-        assertEquals(1, connectionEvent.getInt("connectionId"));
-        assertTrue(connectionEvent.getString("userName").equals(user));
-        assertTrue(connectionEvent.getString("password").equals(password));
-        assertEquals(connectionEvent.getString("url"), null);
+        MockInterceptor<DataSourceContext> interceptor = mockInterceptorFactory.createDataSourceInterceptor();
+        List<DataSourceContext> events = interceptor.getAllPostEvents();
+        assertEquals(1, events.size());
+        DataSourceContext event = events.get(0);
+        assertTrue(event.dataSourceId > 0);
+        assertNotNull(event.dataSource);
+        assertEquals(user, event.getUsername());
+        assertEquals(password, event.getPassword());
+        assertNull(event.getConnection());
+        assertNotNull(event.getConnectionInfo());
+        assertNotEquals(ConnectionInfo.NO_INFO, event.getConnectionInfo());
+        assertNotNull(event.getException());
+        assertEquals(RuntimeException.class, exception.getClass());
     }
 
     @DisplayName("getLogWriter")
     @Test
     void getLogWriter() throws Exception {
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.getLogWriter();
 
         verify(delegatedDs).getLogWriter();
@@ -270,7 +273,6 @@ class JfrDataSourceTest {
     @Test
     void setLogWriter() throws Exception {
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.setLogWriter(null);
 
         verify(delegatedDs).setLogWriter(null);
@@ -279,7 +281,6 @@ class JfrDataSourceTest {
     @Test
     void setLoginTimeout() throws Exception {
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.setLoginTimeout(0);
 
         verify(delegatedDs).setLoginTimeout(0);
@@ -288,7 +289,6 @@ class JfrDataSourceTest {
     @Test
     void getLoginTimeout() throws Exception {
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.getLoginTimeout();
 
         verify(delegatedDs).getLoginTimeout();
@@ -297,7 +297,6 @@ class JfrDataSourceTest {
     @Test
     void getParentLogger() throws Exception {
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.getParentLogger();
 
         verify(delegatedDs).getParentLogger();
@@ -306,7 +305,6 @@ class JfrDataSourceTest {
     @Test
     void unwrap() throws Exception {
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.unwrap(null);
 
         verify(delegatedDs).unwrap(null);
@@ -315,7 +313,6 @@ class JfrDataSourceTest {
     @Test
     void isWrapperFor() throws Exception {
         JfrDataSource dataSource = new JfrDataSource(delegatedDs);
-        ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection).removeMonitor(dataSource.getResourceMonitor());
         dataSource.isWrapperFor(null);
 
         verify(delegatedDs).isWrapperFor(null);

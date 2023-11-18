@@ -1,5 +1,8 @@
 package dev.jfr4jdbc;
 
+import dev.jfr4jdbc.interceptor.DriverContext;
+import dev.jfr4jdbc.interceptor.MockInterceptor;
+import dev.jfr4jdbc.interceptor.MockInterceptorFactory;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -77,26 +80,29 @@ class JfrDriverTest {
     void getConnectionConnectEvent() throws Exception {
         when(delegateDriver.connect(DELEGATE_URL, null)).thenReturn(delegatedCon);
 
-        Driver driver = new JfrDriver(delegateDriver);
-        FlightRecording fr = FlightRecording.start();
+
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        Driver driver = new JfrDriver(delegateDriver, mockInterceptorFactory);
+
         try (Connection con = driver.connect(DELEGATE_URL, null)) {
             // do
             assertEquals(JfrConnection.class, con.getClass());
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
         // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        MockInterceptor<DriverContext> interceptor = mockInterceptorFactory.createDriverInterceptor();
+        List<DriverContext> connectionEvents = interceptor.getAllPostEvents();
         assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertEquals(connectionEvent.getString("dataSourceClass"), null);
-        assertTrue(connectionEvent.getString("connectionClass") != null);
-        assertTrue(connectionEvent.getInt("connectionId") > 0);
-        assertEquals(DELEGATE_URL, connectionEvent.getString("url"));
+
+        DriverContext event = connectionEvents.get(0);
+        assertNotNull(event.getConnection());
+        assertEquals(DELEGATE_URL, event.getConnectionInfo().dataSourceLabel);
+        assertEquals(1, event.getConnectionInfo().conId);
+        assertEquals(0, event.getConnectionInfo().wrappedConId);
+        assertEquals(DELEGATE_URL, event.url);
     }
 
     @DisplayName("getConnection to create ConnectionEvent throw exception as expected")
@@ -104,26 +110,28 @@ class JfrDriverTest {
     void getConnectionConnectEventThrowSQLException() throws Exception {
         when(delegateDriver.connect(DELEGATE_URL, null)).thenThrow(new SQLException());
 
-        Driver driver = new JfrDriver(delegateDriver);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        Driver driver = new JfrDriver(delegateDriver, mockInterceptorFactory);
+
         try (Connection con = driver.connect(DELEGATE_URL, null)) {
             fail();
         } catch (SQLException e) {
 
         } catch (Exception e) {
             fail();
-        } finally {
-            fr.stop();
         }
 
         // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        MockInterceptor<DriverContext> interceptor = mockInterceptorFactory.createDriverInterceptor();
+        List<DriverContext> connectionEvents = interceptor.getAllPostEvents();
         assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertEquals(connectionEvent.getString("dataSourceClass"), null);
-        assertEquals(connectionEvent.getString("connectionClass"), null);
-        assertEquals(1, connectionEvent.getInt("connectionId"));
-        assertEquals(DELEGATE_URL, connectionEvent.getString("url"));
+
+        DriverContext event = connectionEvents.get(0);
+        assertNull(event.getConnection());
+        assertEquals(DELEGATE_URL, event.getConnectionInfo().dataSourceLabel);
+        assertEquals(1, event.getConnectionInfo().conId);
+        assertEquals(0, event.getConnectionInfo().wrappedConId);
+        assertEquals(DELEGATE_URL, event.url);
     }
 
     @DisplayName("getConnection to create ConnectionEvent throw exception as unexpected")
@@ -131,26 +139,28 @@ class JfrDriverTest {
     void getConnectionConnectEventThrowRuntimeException() throws Exception {
         when(delegateDriver.connect(DELEGATE_URL, null)).thenThrow(new RuntimeException());
 
-        Driver driver = new JfrDriver(delegateDriver);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        Driver driver = new JfrDriver(delegateDriver, mockInterceptorFactory);
+
         try (Connection con = driver.connect(DELEGATE_URL, null)) {
             fail();
         } catch (RuntimeException e) {
 
         } catch (Exception e) {
             fail();
-        } finally {
-            fr.stop();
         }
 
         // Connection Event
-        List<RecordedEvent> connectionEvents = fr.getEvents("Connection");
+        MockInterceptor<DriverContext> interceptor = mockInterceptorFactory.createDriverInterceptor();
+        List<DriverContext> connectionEvents = interceptor.getAllPostEvents();
         assertEquals(1, connectionEvents.size());
-        RecordedEvent connectionEvent = connectionEvents.get(0);
-        assertEquals(connectionEvent.getString("dataSourceClass"), null);
-        assertEquals(connectionEvent.getString("connectionClass"), null);
-        assertEquals(1, connectionEvent.getInt("connectionId"));
-        assertEquals(DELEGATE_URL, connectionEvent.getString("url"));
+
+        DriverContext event = connectionEvents.get(0);
+        assertNull(event.getConnection());
+        assertEquals(DELEGATE_URL, event.getConnectionInfo().dataSourceLabel);
+        assertEquals(1, event.getConnectionInfo().conId);
+        assertEquals(0, event.getConnectionInfo().wrappedConId);
+        assertEquals(DELEGATE_URL, event.url);
     }
 
     @DisplayName("notGetConnection")

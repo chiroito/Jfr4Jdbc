@@ -1,5 +1,8 @@
 package dev.jfr4jdbc;
 
+import dev.jfr4jdbc.interceptor.*;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.OperationInfo;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,23 +42,25 @@ class JfrStatementTest {
     @DisplayName("create StatementEvent")
     @Test
     void createStatementEvent() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeQuery(SAMPLE_SQL);
 
-        fr.stop();
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertEquals(0, event.getInt("statementId"));
-        assertFalse(event.getBoolean("poolable"));
-        assertFalse(event.getBoolean("closed"));
-        assertTrue(event.getClass("statementClass") != null);
-        assertEquals(0, event.getInt("connectionId"));
-        assertFalse(event.getBoolean("autoCommit"));
-        assertFalse(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.inquiry));
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertFalse(event.isStatementPoolable());
+        assertFalse(event.isStatementClosed());
+        assertNotNull(event.statement);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertFalse(event.isAutoCommitted());
+        assertFalse(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent throw exception as expected")
@@ -63,8 +68,8 @@ class JfrStatementTest {
     void createStatementEventThrowSQLException() throws Exception {
         when(this.delegateState.executeQuery(SAMPLE_SQL)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeQuery(SAMPLE_SQL);
@@ -74,21 +79,21 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertEquals(0, event.getInt("statementId"));
-        assertFalse(event.getBoolean("poolable"));
-        assertFalse(event.getBoolean("closed"));
-        assertTrue(event.getClass("statementClass") != null);
-        assertEquals(0, event.getInt("connectionId"));
-        assertFalse(event.getBoolean("autoCommit"));
-        assertFalse(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.inquiry));
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertFalse(event.isStatementPoolable());
+        assertFalse(event.isStatementClosed());
+        assertNotNull(event.statement);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertFalse(event.isAutoCommitted());
+        assertFalse(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent throw exception as unexpected")
@@ -96,8 +101,8 @@ class JfrStatementTest {
     void createStatementEventThrowRuntimeException() throws Exception {
         when(this.delegateState.executeQuery(SAMPLE_SQL)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeQuery(SAMPLE_SQL);
@@ -107,21 +112,21 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertEquals(0, event.getInt("statementId"));
-        assertFalse(event.getBoolean("poolable"));
-        assertFalse(event.getBoolean("closed"));
-        assertTrue(event.getClass("statementClass") != null);
-        assertEquals(0, event.getInt("connectionId"));
-        assertFalse(event.getBoolean("autoCommit"));
-        assertFalse(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.inquiry));
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertFalse(event.isStatementPoolable());
+        assertFalse(event.isStatementClosed());
+        assertNotNull(event.statement);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertFalse(event.isAutoCommitted());
+        assertFalse(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent with Poolable")
@@ -129,22 +134,23 @@ class JfrStatementTest {
     void createStatementEventPoolable() throws Exception {
         when(delegateState.isPoolable()).thenReturn(true);
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeQuery(SAMPLE_SQL);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertEquals(0, event.getInt("statementId"));
-        assertTrue(event.getBoolean("poolable"));
-        assertFalse(event.getBoolean("closed"));
-        assertTrue(event.getClass("statementClass") != null);
-        assertEquals(0, event.getInt("connectionId"));
-        assertFalse(event.getBoolean("autoCommit"));
-        assertFalse(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.inquiry));
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertTrue(event.isStatementPoolable());
+        assertFalse(event.isStatementClosed());
+        assertNotNull(event.statement);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertFalse(event.isAutoCommitted());
+        assertFalse(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent with Closed")
@@ -152,22 +158,23 @@ class JfrStatementTest {
     void createStatementEventClosed() throws Exception {
         when(delegateState.isClosed()).thenReturn(true);
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeQuery(SAMPLE_SQL);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertEquals(0, event.getInt("statementId"));
-        assertFalse(event.getBoolean("poolable"));
-        assertTrue(event.getBoolean("closed"));
-        assertTrue(event.getClass("statementClass") != null);
-        assertEquals(0, event.getInt("connectionId"));
-        assertFalse(event.getBoolean("autoCommit"));
-        assertFalse(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.inquiry));
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertFalse(event.isStatementPoolable());
+        assertTrue(event.isStatementClosed());
+        assertNotNull(event.statement);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertFalse(event.isAutoCommitted());
+        assertFalse(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent Connection")
@@ -176,22 +183,23 @@ class JfrStatementTest {
         Connection delegatedCon = mock(Connection.class);
         when(delegateState.getConnection()).thenReturn(delegatedCon);
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeQuery(SAMPLE_SQL);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertEquals(0, event.getInt("statementId"));
-        assertFalse(event.getBoolean("poolable"));
-        assertFalse(event.getBoolean("closed"));
-        assertTrue(event.getClass("statementClass") != null);
-        assertEquals(0, event.getInt("connectionId"));
-        assertFalse(event.getBoolean("autoCommit"));
-        assertFalse(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.inquiry));
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertFalse(event.isStatementPoolable());
+        assertFalse(event.isStatementClosed());
+        assertNotNull(event.statement);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertFalse(event.isAutoCommitted());
+        assertFalse(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent Auto Commit")
@@ -202,22 +210,23 @@ class JfrStatementTest {
         when(delegateState.getConnection()).thenReturn(delegatedCon);
         when(delegatedCon.getAutoCommit()).thenReturn(true);
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeQuery(SAMPLE_SQL);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(SAMPLE_SQL.equals(event.getString("sql")));
-        assertEquals(0, event.getInt("statementId"));
-        assertFalse(event.getBoolean("poolable"));
-        assertFalse(event.getBoolean("closed"));
-        assertTrue(event.getClass("statementClass") != null);
-        assertEquals(0, event.getInt("connectionId"));
-        assertTrue(event.getBoolean("autoCommit"));
-        assertFalse(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(SAMPLE_SQL.equals(event.inquiry));
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertFalse(event.isStatementPoolable());
+        assertFalse(event.isStatementClosed());
+        assertNotNull(event.statement);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertTrue(event.isAutoCommitted());
+        assertFalse(event.isPrepared);
     }
 
     @DisplayName("return JfrResultSet by executeQuery")
@@ -232,12 +241,12 @@ class JfrStatementTest {
     @DisplayName("create ResultSetEvent by getGeneratedKeys")
     @Test
     void createResultSetEventByGetGeneratedKeys() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.getGeneratedKeys();
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -246,8 +255,8 @@ class JfrStatementTest {
     void createResultSetEventByGetGeneratedKeysThrowSQLException() throws Exception {
         when(this.delegateState.getGeneratedKeys()).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.getGeneratedKeys();
@@ -257,11 +266,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -270,8 +278,8 @@ class JfrStatementTest {
     void createResultSetEventByGetGeneratedKeysThrowRuntimeException() throws Exception {
         when(this.delegateState.getGeneratedKeys()).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.getGeneratedKeys();
@@ -281,11 +289,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -301,12 +308,12 @@ class JfrStatementTest {
     @DisplayName("create JfrStatementEvent by executeUpdate")
     @Test
     void createStatementEventByExecuteUpdate() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeUpdate(SAMPLE_SQL);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -315,8 +322,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdateThrowSQLException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL);
@@ -326,11 +333,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -339,8 +345,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdateThrowRuntimeException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL);
@@ -350,23 +356,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by executeUpdate(sql, autoGeneratedKeys)")
     @Test
     void createStatementEventByExecuteUpdate1() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeUpdate(SAMPLE_SQL, 0);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -375,8 +380,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdate1ThrowSQLException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL, 0)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL, 0);
@@ -386,11 +391,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -399,8 +403,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdate1ThrowRuntimeException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL, 0)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL, 0);
@@ -410,23 +414,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by executeUpdate(sql, columnIndexes)")
     @Test
     void createStatementEventByExecuteUpdate2() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeUpdate(SAMPLE_SQL, (int[]) null);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -435,8 +438,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdate2ThrowSQLException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL, (int[]) null)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL, (int[]) null);
@@ -446,11 +449,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -459,8 +461,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdate2ThrowRuntimeException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL, (int[]) null)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL, (int[]) null);
@@ -470,23 +472,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by executeUpdate(sql, columnNames)")
     @Test
     void createStatementEventByExecuteUpdate3() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeUpdate(SAMPLE_SQL, (String[]) null);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -495,8 +496,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdate3ThrowSQLException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL, (String[]) null)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL, (String[]) null);
@@ -506,11 +507,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -519,8 +519,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteUpdate3ThrowRuntimeException() throws Exception {
         when(this.delegateState.executeUpdate(SAMPLE_SQL, (String[]) null)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeUpdate(SAMPLE_SQL, (String[]) null);
@@ -530,23 +530,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by execute")
     @Test
     void createStatementEventByExecute() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.execute(SAMPLE_SQL);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -555,8 +554,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteThrowSQLException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL);
@@ -566,11 +565,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -579,8 +577,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteThrowRuntimeException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL);
@@ -590,23 +588,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by execute(sql, autoGeneratedKeys)")
     @Test
     void createStatementEventByExecute1() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.execute(SAMPLE_SQL, 0);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -615,8 +612,8 @@ class JfrStatementTest {
     void createStatementEventByExecute1ThrowSQLException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL, 0)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL, 0);
@@ -626,11 +623,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -639,8 +635,8 @@ class JfrStatementTest {
     void createStatementEventByExecute1ThrowRuntimeException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL, 0)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL, 0);
@@ -650,23 +646,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by execute(sql, columnIndexes)")
     @Test
     void createStatementEventByExecute2() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.execute(SAMPLE_SQL, (int[]) null);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -675,8 +670,8 @@ class JfrStatementTest {
     void createStatementEventByExecute2ThrowSQLException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL, (int[]) null)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL, (int[]) null);
@@ -686,11 +681,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -699,8 +693,8 @@ class JfrStatementTest {
     void createStatementEventByExecute2ThrowRuntimeException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL, (int[]) null)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL, (int[]) null);
@@ -710,23 +704,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by execute(sql, columnNames)")
     @Test
     void createStatementEventByExecute3() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.execute(SAMPLE_SQL, (String[]) null);
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -735,8 +728,8 @@ class JfrStatementTest {
     void createStatementEventByExecute3ThrowSQLException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL, (String[]) null)).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL, (String[]) null);
@@ -746,11 +739,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -759,8 +751,8 @@ class JfrStatementTest {
     void createStatementEventByExecute3ThrowRuntimeException() throws Exception {
         when(this.delegateState.execute(SAMPLE_SQL, (String[]) null)).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.execute(SAMPLE_SQL, (String[]) null);
@@ -770,23 +762,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrStatementEvent by executeBatch")
     @Test
     void createStatementEventByExecuteBatch() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.executeBatch();
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -795,8 +786,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteBatchThrowSQLException() throws Exception {
         when(this.delegateState.executeBatch()).thenThrow(new SQLException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeBatch();
@@ -806,11 +797,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -819,8 +809,8 @@ class JfrStatementTest {
     void createStatementEventByExecuteBatchThrowRuntimeException() throws Exception {
         when(this.delegateState.executeBatch()).thenThrow(new RuntimeException());
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.executeBatch();
@@ -830,23 +820,22 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Statement");
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
     @DisplayName("create JfrCancelEvent by cancel")
     @Test
     void createStatementEventByCancel() throws Exception {
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
         statement.cancel();
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Cancel");
+        MockInterceptor<CancelContext> interceptor = mockInterceptorFactory.createCancelInterceptor();
+        List<CancelContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -855,8 +844,8 @@ class JfrStatementTest {
     void createStatementEventByCancelThrowSQLException() throws Exception {
         Mockito.doThrow(new SQLException()).when(delegateState).cancel();
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.cancel();
@@ -866,11 +855,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Cancel");
+        MockInterceptor<CancelContext> interceptor = mockInterceptorFactory.createCancelInterceptor();
+        List<CancelContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 
@@ -879,8 +867,8 @@ class JfrStatementTest {
     void createStatementEventByCancelThrowRuntimeException() throws Exception {
         Mockito.doThrow(new RuntimeException()).when(delegateState).cancel();
 
-        JfrStatement statement = new JfrStatement(this.delegateState);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrStatement statement = new JfrStatement(this.delegateState, mockInterceptorFactory);
 
         try {
             statement.cancel();
@@ -890,11 +878,10 @@ class JfrStatementTest {
         } catch (Exception e) {
             e.printStackTrace();
             fail();
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Cancel");
+        MockInterceptor<CancelContext> interceptor = mockInterceptorFactory.createCancelInterceptor();
+        List<CancelContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
     }
 

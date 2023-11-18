@@ -1,5 +1,7 @@
 package dev.jfr4jdbc;
 
+import dev.jfr4jdbc.interceptor.*;
+import dev.jfr4jdbc.internal.ConnectionInfo;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,15 +38,15 @@ class JfrConnectionTest {
     @DisplayName("create CommitEvent")
     @Test
     void createCommitEvent() throws Exception {
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         connection.commit();
-        fr.stop();
-
-        List<RecordedEvent> events = fr.getEvents("Commit");
+        
+        MockInterceptor<CommitContext> interceptor = mockInterceptorFactory.createCommitInterceptor();
+        List<CommitContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(0, event.getInt("connectionId"));
+        CommitContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create CommitEvent throw exception as expected")
@@ -52,21 +54,20 @@ class JfrConnectionTest {
     void createCommitEventThrowSQLException() throws Exception {
         Mockito.doThrow(new SQLException()).when(delegatedCon).commit();
 
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         try {
             connection.commit();
             fail();
         } catch (SQLException e) {
 
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Commit");
+        MockInterceptor<CommitContext> interceptor = mockInterceptorFactory.createCommitInterceptor();
+        List<CommitContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        CommitContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create CommitEvent throw exception as unexpected")
@@ -74,35 +75,35 @@ class JfrConnectionTest {
     void createCommitEventThrowRuntimeException() throws Exception {
         Mockito.doThrow(new RuntimeException()).when(delegatedCon).commit();
 
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         try {
             connection.commit();
             fail();
         } catch (RuntimeException e) {
 
         } finally {
-            fr.stop();
-        }
+            }
 
-        List<RecordedEvent> events = fr.getEvents("Commit");
+        MockInterceptor<CommitContext> interceptor = mockInterceptorFactory.createCommitInterceptor();
+        List<CommitContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        CommitContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create RollbackEvent")
     @Test
     void createRollbackEvent() throws Exception {
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         connection.rollback();
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Rollback");
+        MockInterceptor<RollbackContext> interceptor = mockInterceptorFactory.createRollbackInterceptor();
+        List<RollbackContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        RollbackContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create RollbackEvent throw exception as expected")
@@ -110,21 +111,21 @@ class JfrConnectionTest {
     void createRollbackEventThrowSQLException() throws Exception {
         Mockito.doThrow(new SQLException()).when(delegatedCon).rollback();
 
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         try {
             connection.rollback();
             fail();
         } catch (SQLException e) {
 
         } finally {
-            fr.stop();
-        }
+            }
 
-        List<RecordedEvent> events = fr.getEvents("Rollback");
+        MockInterceptor<RollbackContext> interceptor = mockInterceptorFactory.createRollbackInterceptor();
+        List<RollbackContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        RollbackContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create RollbackEvent throw exception as unexpected")
@@ -132,35 +133,35 @@ class JfrConnectionTest {
     void createRollbackEventThrowRuntimeException() throws Exception {
         Mockito.doThrow(new RuntimeException()).when(delegatedCon).rollback();
 
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         try {
             connection.rollback();
             fail();
         } catch (RuntimeException e) {
 
         } finally {
-            fr.stop();
-        }
+            }
 
-        List<RecordedEvent> events = fr.getEvents("Rollback");
+        MockInterceptor<RollbackContext> interceptor = mockInterceptorFactory.createRollbackInterceptor();
+        List<RollbackContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        RollbackContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create CloseEvent")
     @Test
     void createCloseEvent() throws Exception {
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         connection.close();
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents("Close");
+        MockInterceptor<CloseContext> interceptor = mockInterceptorFactory.createCloseInterceptor();
+        List<CloseContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        CloseContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create CloseEvent throw exception as expected")
@@ -168,21 +169,20 @@ class JfrConnectionTest {
     void createCloseEventThrowSQLException() throws Exception {
         Mockito.doThrow(new SQLException()).when(delegatedCon).close();
 
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         try {
             connection.close();
             fail();
         } catch (SQLException e) {
 
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Close");
+        MockInterceptor<CloseContext> interceptor = mockInterceptorFactory.createCloseInterceptor();
+        List<CloseContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        CloseContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @DisplayName("create CloseEvent throw exception as unexpected")
@@ -190,21 +190,20 @@ class JfrConnectionTest {
     void createCloseEventThrowRuntimeException() throws Exception {
         Mockito.doThrow(new RuntimeException()).when(delegatedCon).close();
 
-        JfrConnection connection = new JfrConnection(this.delegatedCon);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrConnection connection = new JfrConnection(this.delegatedCon, mockInterceptorFactory);
         try {
             connection.close();
             fail();
         } catch (RuntimeException e) {
 
-        } finally {
-            fr.stop();
         }
 
-        List<RecordedEvent> events = fr.getEvents("Close");
+        MockInterceptor<CloseContext> interceptor = mockInterceptorFactory.createCloseInterceptor();
+        List<CloseContext> events = interceptor.getAllPostEvents();
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(connection.getConnectionInfo().conId, event.getInt("connectionId"));
+        CloseContext event = events.get(0);
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
     }
 
     @Test

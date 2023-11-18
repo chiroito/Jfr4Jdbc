@@ -5,8 +5,8 @@ import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
 import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.Label;
 import dev.jfr4jdbc.internal.ResourceMonitor;
-import dev.jfr4jdbc.internal.ResourceMonitorKind;
 import dev.jfr4jdbc.internal.ResourceMonitorManager;
 
 import java.sql.*;
@@ -19,43 +19,37 @@ import java.util.logging.Logger;
  */
 public class JfrDriver implements Driver {
 
-    private static final AtomicInteger labelCounter = new AtomicInteger(0);
+    private static final AtomicInteger defaultLabelCounter = new AtomicInteger(0);
 
     private final AtomicInteger connectionCounter = new AtomicInteger(1);
 
     private final Driver wrappedDriver;
 
-    private final ResourceMonitor connectionMonitor;
+    private final ResourceMonitor resourceMonitor;
 
     private final InterceptorFactory interceptorFactory;
 
-    private final String driverLabel;
+    private final String label;
 
     JfrDriver(Driver driver) {
-        this(driver, InterceptorManager.getDefaultInterceptorFactory(), "Driver#" + labelCounter.incrementAndGet());
+        this(driver, InterceptorManager.getDefaultInterceptorFactory(), "Driver#" + defaultLabelCounter.incrementAndGet());
     }
 
     JfrDriver(Driver driver, InterceptorFactory interceptorFactory) {
-        this(driver, interceptorFactory, "Driver#" + labelCounter.incrementAndGet());
+        this(driver, interceptorFactory, "Driver#" + defaultLabelCounter.incrementAndGet());
     }
 
-    JfrDriver(Driver driver, String driverLabel) {
-        this(driver, InterceptorManager.getDefaultInterceptorFactory(), driverLabel);
+    JfrDriver(Driver driver, String label) {
+        this(driver, InterceptorManager.getDefaultInterceptorFactory(), label);
     }
 
-    JfrDriver(Driver driver, InterceptorFactory interceptorFactory, String driverLabel) {
+    JfrDriver(Driver driver, InterceptorFactory interceptorFactory, String label) {
 
         this.wrappedDriver = driver;
         this.interceptorFactory = interceptorFactory;
-        this.driverLabel = driverLabel;
+        this.label = label;
 
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor monitor = manager.getMonitor(driverLabel);
-        if (monitor == null) {
-            monitor = manager.createConnectionMonitor(driver, driverLabel, interceptorFactory);
-            manager.addMonitor(monitor);
-        }
-        this.connectionMonitor = monitor;
+        this.resourceMonitor = ResourceMonitorManager.getInstance().getOrCreateResourceMonitor(new Label(label));
     }
 
     @Override
@@ -72,7 +66,7 @@ public class JfrDriver implements Driver {
 
         Connection delegatedCon = null;
         try {
-            this.connectionMonitor.waitAssigningResource();
+            this.resourceMonitor.waitAssigningResource();
 
             interceptor.preInvoke(context);
             delegatedCon = this.wrappedDriver.connect(url, info);
@@ -83,10 +77,10 @@ public class JfrDriver implements Driver {
             throw e;
         } finally {
             interceptor.postInvoke(context);
-            this.connectionMonitor.assignedResource();
+            this.resourceMonitor.assignedResource();
         }
 
-        return new JfrConnection(delegatedCon, interceptorFactory, this.connectionMonitor, new ConnectionInfo(this.driverLabel, connectionId, 0));
+        return new JfrConnection(delegatedCon, interceptorFactory, this.resourceMonitor, new ConnectionInfo(this.label, connectionId, 0));
     }
 
     @Override

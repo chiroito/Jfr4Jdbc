@@ -5,8 +5,8 @@ import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.InterceptorFactory;
 import dev.jfr4jdbc.interceptor.InterceptorManager;
 import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.Label;
 import dev.jfr4jdbc.internal.ResourceMonitor;
-import dev.jfr4jdbc.internal.ResourceMonitorKind;
 import dev.jfr4jdbc.internal.ResourceMonitorManager;
 
 import java.sql.*;
@@ -112,12 +112,8 @@ public class JfrServiceLoadedDriver implements Driver {
 
         Interceptor<DriverContext> interceptor = interceptorFactory.createDriverInterceptor();
 
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor monitor = manager.getMonitor(delegeteUrl);
-        if (monitor == null) {
-            monitor = manager.createConnectionMonitor(delegateDriver, delegeteUrl, interceptorFactory);
-            manager.addMonitor(monitor);
-        }
+        Label label = new Label(delegeteUrl);
+        ResourceMonitor monitor = ResourceMonitorManager.getInstance().getOrCreateResourceMonitor(label);
 
         // Connecting to delegated url and recording connect event.
         Connection delegatedCon = null;

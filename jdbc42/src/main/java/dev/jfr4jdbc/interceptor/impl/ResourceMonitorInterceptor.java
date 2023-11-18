@@ -1,6 +1,6 @@
 package dev.jfr4jdbc.interceptor.impl;
 
-import dev.jfr4jdbc.event.jfr.JfrConnectionResourceEvent;
+import dev.jfr4jdbc.internal.JfrConnectionResourceEvent;
 import dev.jfr4jdbc.interceptor.Interceptor;
 import dev.jfr4jdbc.interceptor.ResourceMonitorContext;
 

@@ -1,6 +1,7 @@
 package dev.jfr4jdbc.interceptor;
 
 public interface InterceptorFactory {
+    
     Interceptor<DataSourceContext> createDataSourceInterceptor();
 
     Interceptor<DriverContext> createDriverInterceptor();

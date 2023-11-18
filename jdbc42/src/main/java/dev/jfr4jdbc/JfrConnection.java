@@ -12,16 +12,16 @@ public class JfrConnection extends JfrConnection42 implements Connection {
         super(con);
     }
 
-    public JfrConnection(Connection con, String dataSourceLabel) {
-        super(con, dataSourceLabel);
+    public JfrConnection(Connection con, String label) {
+        super(con, label);
     }
 
     public JfrConnection(Connection con, InterceptorFactory factory) {
         super(con, factory);
     }
 
-    public JfrConnection(Connection con, InterceptorFactory factory, String dataSourceLabel) {
-        super(con, factory, dataSourceLabel);
+    public JfrConnection(Connection con, InterceptorFactory factory, String label) {
+        super(con, factory, label);
     }
 
     JfrConnection(Connection con, InterceptorFactory factory, ResourceMonitor connectionMonitor, ConnectionInfo connectionInfo) {

@@ -25,13 +25,12 @@ public class JfrResultSet implements ResultSet {
 
     private final OperationInfo operationInfo;
 
-
     public JfrResultSet(ResultSet resultSet) {
         this(resultSet, InterceptorManager.getDefaultInterceptorFactory());
     }
 
     public JfrResultSet(ResultSet resultSet, InterceptorFactory factory) {
-        this(resultSet, factory, new ConnectionInfo(null, 0, 0), new OperationInfo(0));
+        this(resultSet, factory, ConnectionInfo.NO_INFO, OperationInfo.NO_INFO);
     }
 
     JfrResultSet(ResultSet resultSet, InterceptorFactory factory, ConnectionInfo connectionInfo, OperationInfo operationInfo) {
@@ -54,6 +53,7 @@ public class JfrResultSet implements ResultSet {
         try {
             interceptor.preInvoke(context);
             result = this.resultSet.next();
+            context.setResult(result);
         } catch (SQLException e) {
             context.setException(e);
             exception = e;

@@ -1,11 +1,9 @@
 package dev.jfr4jdbc.internal;
 
-import dev.jfr4jdbc.FlightRecording;
-import dev.jfr4jdbc.JfrConnection;
-import dev.jfr4jdbc.JfrDataSource;
-import dev.jfr4jdbc.MockJDBC;
-import dev.jfr4jdbc.event.jfr.JfrConnectionResourceEvent;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import dev.jfr4jdbc.*;
 import jdk.jfr.consumer.RecordedEvent;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -13,6 +11,10 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,269 +25,142 @@ public class JfrResourceMonitorTest {
     private static final AtomicInteger id = new AtomicInteger(0);
 
     @Test
-    void weatherWriting() throws Exception {
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
-
-        JfrConnection con = new JfrConnection(null);
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor.recordResourceMonitor(manager);
-        fr.stop();
-
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource");
-        assertTrue(events.size() > 0);
-    }
-
-    @Test
     void defaultDatasourceName() throws Exception {
 
         MockJDBC db = new MockJDBC();
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
+        ResourceMonitorManager manager = ResourceMonitorManager.getInstance();
 
-        DataSource dataSource = new JfrDataSource(db.getDataSource(1));
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor.recordResourceMonitor(manager);
-        fr.stop();
+        JfrDataSource dataSource = new JfrDataSource(db.getDataSource(1));
 
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").startsWith("Data"));
-        assertTrue(events.size() > 0);
+        long count = manager.getMonitors().stream().filter(m -> m.getLabel().value.startsWith("DataSource#")).count();
+        assertTrue(count > 0); // Data source may have been created before this test was run
+        assertEquals(0, dataSource.getResourceMetrics().usage);
     }
 
     @Test
     void defaultConnectionName() throws Exception {
+        MockJDBC db = new MockJDBC();
+        ResourceMonitorManager manager = ResourceMonitorManager.getInstance();
+        JfrConnection con = new JfrConnection(Mockito.mock(Connection.class));
+        con.close();
 
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
-
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor.recordResourceMonitor(manager);
-        fr.stop();
-
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("userManagedConnection"));
-        assertTrue(events.size() > 0);
+        long count = manager.getMonitors().stream().filter(m -> m.getLabel().value.equals("userManagedConnection")).count();
+        assertEquals(1, count);
     }
 
     @Test
     void datasourceUsageCount() throws Exception {
         int labelId = id.incrementAndGet();
-
+        String labelName = "ds" + labelId;
         MockJDBC db = new MockJDBC();
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
+        JfrDataSource dataSource = new JfrDataSource(db.getDataSource(1), labelName);
 
-        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor.recordResourceMonitor(manager);
+        ResourceMetrics beforeGetMetrics = dataSource.getResourceMetrics();
         Connection con1 = dataSource.getConnection();
-        ResourceMonitor.recordResourceMonitor(manager);
+        ResourceMetrics afterGetMetrics = dataSource.getResourceMetrics();
         con1.close();
-        ResourceMonitor.recordResourceMonitor(manager);
-        fr.stop();
+        ResourceMetrics afterCloseMetrics = dataSource.getResourceMetrics();
 
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
-        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
-        assertEquals(3, events.size());
-        RecordedEvent first = events.get(0);
-        assertEquals(0, first.getInt("usage"));
-        RecordedEvent second = events.get(1);
-        assertEquals(1, second.getInt("usage"));
-        RecordedEvent third = events.get(2);
-        assertEquals(0, third.getInt("usage"));
+        assertEquals(0, beforeGetMetrics.usage);
+        assertEquals(1, afterGetMetrics.usage);
+        assertEquals(0, afterCloseMetrics.usage);
     }
 
     @Test
     void connectionUsageCount() throws Exception {
         int labelId = id.incrementAndGet();
-
+        String labelName = "con" + labelId;
         MockJDBC db = new MockJDBC();
         db.initDriver("jdbc:mock");
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
 
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        JfrConnection con1 = new JfrConnection(Mockito.mock(Connection.class), "con" + labelId);
-        ResourceMonitor.recordResourceMonitor(manager);
+        JfrConnection con1 = new JfrConnection(Mockito.mock(Connection.class), labelName);
+        ResourceMetrics afterGetMetrics = con1.getResourceMetrics();
         con1.close();
-        ResourceMonitor.recordResourceMonitor(manager);
-        fr.stop();
+        ResourceMetrics afterCloseMetrics = con1.getResourceMetrics();
 
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("con" + labelId));
-        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
-        assertEquals(2, events.size());
-        RecordedEvent first = events.get(0);
-        assertEquals(1, first.getInt("usage"));
-        RecordedEvent second = events.get(1);
-        assertEquals(0, second.getInt("usage"));
+        assertEquals(1, afterGetMetrics.usage);
+        assertEquals(0, afterCloseMetrics.usage);
     }
 
     @Test
+    @DisplayName("Whether data sources and connections are monitored separately")
     void datasourceAndConnectionUsageCount() throws Exception {
         int labelId = id.incrementAndGet();
-
+        String label1 = "ds" + labelId;
+        String label2 = "con" + labelId;
         MockJDBC db = new MockJDBC();
         db.initDriver("jdbc:mock");
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
 
-        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor.recordResourceMonitor(manager);
-        JfrConnection con = new JfrConnection(Mockito.mock(Connection.class), "con" + labelId);
+
+        JfrDataSource dataSource = new JfrDataSource(db.getDataSource(1), label1);
+        ResourceMetrics resourceMetrics1 = dataSource.getResourceMetrics();
+        JfrConnection con = new JfrConnection(Mockito.mock(Connection.class), label2);
         Connection dsCon = dataSource.getConnection();
-        ResourceMonitor.recordResourceMonitor(manager);
+        ResourceMetrics resourceMetrics12 = dataSource.getResourceMetrics();
+        ResourceMetrics resourceMetrics22 = con.getResourceMetrics();
         con.close();
         dsCon.close();
-        ResourceMonitor.recordResourceMonitor(manager);
-        fr.stop();
+        ResourceMetrics resourceMetrics13 = dataSource.getResourceMetrics();
+        ResourceMetrics resourceMetrics23 = con.getResourceMetrics();
 
-        List<RecordedEvent> conEvents = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("con" + labelId));
-        conEvents.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
-        assertEquals(2, conEvents.size());
-        RecordedEvent first = conEvents.get(0);
-        assertEquals(1, first.getInt("usage"));
-        RecordedEvent second = conEvents.get(1);
-        assertEquals(0, second.getInt("usage"));
-
-        List<RecordedEvent> dsEvents = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
-        dsEvents.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
-        assertEquals(3, dsEvents.size());
-        RecordedEvent dsFirst = dsEvents.get(0);
-        assertEquals(0, dsFirst.getInt("usage"));
-        RecordedEvent dsSecond = dsEvents.get(1);
-        assertEquals(1, dsSecond.getInt("usage"));
-        RecordedEvent dsThird = dsEvents.get(2);
-        assertEquals(0, dsThird.getInt("usage"));
+        assertEquals(0, resourceMetrics1.usage);
+        assertEquals(1, resourceMetrics12.usage);
+        assertEquals(1, resourceMetrics22.usage);
+        assertEquals(0, resourceMetrics13.usage);
+        assertEquals(0, resourceMetrics23.usage);
     }
 
     @Test
+    @DisplayName("Waiting for data source connection assignment")
     void datasourceWaitCount() throws Exception {
         int labelId = id.incrementAndGet();
-
+        String label1 = "ds" + labelId;
         MockJDBC db = new MockJDBC();
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
-
-        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor monitor = manager.getMonitor("ds" + labelId);
-
-        ResourceMonitor.recordResourceMonitor(manager);
+        JfrDataSource dataSource = new JfrDataSource(db.getDataSource(1), label1);
         Connection con1 = dataSource.getConnection();
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
 
-        Thread t1 = new Thread(new GetConnectionTask(dataSource), "datasourceWaitCount");
-        t1.start();
+        Future<?> f1 = executorService.submit(new GetConnectionTask(dataSource));
+        while (dataSource.getResourceMetrics().wait != 1) ;
 
-        while (monitor.getWait() != 1) ;
-
-        ResourceMonitor.recordResourceMonitor(manager);
-
-        Thread t2 = new Thread(new GetConnectionTask(dataSource), "datasourceWaitCount");
-        t2.start();
-
-        while (monitor.getWait() != 2) ;
-
-        ResourceMonitor.recordResourceMonitor(manager);
+        ResourceMetrics resourceMetrics1 = dataSource.getResourceMetrics();
         con1.close();
-        ResourceMonitor.recordResourceMonitor(manager);
-        fr.stop();
+        while (!f1.isDone()) ;
+        ResourceMetrics resourceMetrics12 = dataSource.getResourceMetrics();
 
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
-        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
-        assertEquals(4, events.size());
-        RecordedEvent first = events.get(0);
-        assertEquals(0, first.getInt("wait"));
-        RecordedEvent second = events.get(1);
-        assertEquals(1, second.getInt("wait"));
-        RecordedEvent third = events.get(2);
-        assertEquals(2, third.getInt("wait"));
-        RecordedEvent fourth = events.get(3);
-        assertTrue(fourth.getInt("wait") <= 2);
-
+        assertEquals(1, resourceMetrics1.wait);
+        assertEquals(0, resourceMetrics12.wait);
     }
-
-    ;
 
     @Test
     void eachDatasourceWaitCount() throws Exception {
         int labelId = id.incrementAndGet();
-
+        String label1 = "ds" + labelId;
+        String label2 = "ds" + labelId + "_2";
         MockJDBC db = new MockJDBC();
-        ResourceMonitor.stopRecording();
-        FlightRecording fr = FlightRecording.start();
-        fr.enable(JfrConnectionResourceEvent.class);
-
-        DataSource dataSource = new JfrDataSource(db.getDataSource(1), "ds" + labelId);
-        DataSource dataSource2 = new JfrDataSource(db.getDataSource(1), "ds" + labelId + "_2");
-        ResourceMonitorManager manager = ResourceMonitorManager.getInstance(ResourceMonitorKind.Connection);
-        ResourceMonitor monitor = manager.getMonitor("ds" + labelId);
-        ResourceMonitor monitor2 = manager.getMonitor("ds" + labelId + "_2");
-
-        ResourceMonitor.recordResourceMonitor(manager);
+        JfrDataSource dataSource = new JfrDataSource(db.getDataSource(1), label1);
+        JfrDataSource dataSource2 = new JfrDataSource(db.getDataSource(1), label2);
         Connection con1 = dataSource.getConnection();
         Connection con2 = dataSource2.getConnection();
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-        Thread t1 = new Thread(new GetConnectionTask(dataSource), "datasourceWaitCount");
-        t1.start();
-        while (monitor.getWait() != 1) ;
-        ResourceMonitor.recordResourceMonitor(manager);
-
-        Thread t2 = new Thread(new GetConnectionTask(dataSource), "datasourceWaitCount");
-        t2.start();
-        while (monitor.getWait() != 2) ;
-        ResourceMonitor.recordResourceMonitor(manager);
-
-        Thread t3 = new Thread(new GetConnectionTask(dataSource2), "datasourceWaitCount");
-        t3.start();
-        while (monitor2.getWait() != 1) ;
-        ResourceMonitor.recordResourceMonitor(manager);
-
+        Future<?> f1 = executorService.submit(new GetConnectionTask(dataSource));
+        Future<?> f2 = executorService.submit(new GetConnectionTask(dataSource2));
+        while (dataSource.getResourceMetrics().wait != 1) ;
+        while (dataSource2.getResourceMetrics().wait != 1) ;
+        ResourceMetrics resourceMetrics1 = dataSource.getResourceMetrics();
+        ResourceMetrics resourceMetrics2 = dataSource2.getResourceMetrics();
         con1.close();
-        ResourceMonitor.recordResourceMonitor(manager);
-
         con2.close();
-        ResourceMonitor.recordResourceMonitor(manager);
+        while (!f1.isDone()) ;
+        while (!f2.isDone()) ;
+        ResourceMetrics resourceMetrics12 = dataSource.getResourceMetrics();
+        ResourceMetrics resourceMetrics22 = dataSource2.getResourceMetrics();
 
-        fr.stop();
-
-        List<RecordedEvent> events = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId));
-        events.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
-        assertEquals(6, events.size());
-        RecordedEvent e1 = events.get(0);
-        assertEquals(0, e1.getInt("wait"));
-        RecordedEvent e2 = events.get(1);
-        assertEquals(1, e2.getInt("wait"));
-        RecordedEvent e3 = events.get(2);
-        assertEquals(2, e3.getInt("wait"));
-        RecordedEvent e4 = events.get(3);
-        assertEquals(2, e4.getInt("wait"));
-        RecordedEvent e5 = events.get(4);
-        assertTrue(e5.getInt("wait") <= 2);
-        RecordedEvent e6 = events.get(5);
-        assertTrue(e6.getInt("wait") <= 2);
-
-        List<RecordedEvent> events2 = fr.getEvents("ConnectionResource", e -> e.getString("label").equals("ds" + labelId + "_2"));
-        events2.sort((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
-        assertEquals(6, events2.size());
-        RecordedEvent f1 = events2.get(0);
-        assertEquals(0, f1.getInt("wait"));
-        RecordedEvent f2 = events2.get(1);
-        assertEquals(0, f2.getInt("wait"));
-        RecordedEvent f3 = events2.get(2);
-        assertEquals(0, f3.getInt("wait"));
-        RecordedEvent f4 = events2.get(3);
-        assertEquals(1, f4.getInt("wait"));
-        RecordedEvent f5 = events2.get(4);
-        assertEquals(1, f5.getInt("wait"));
-        RecordedEvent f6 = events2.get(5);
-        assertTrue(f6.getInt("wait") <= 1);
+        assertEquals(1, resourceMetrics1.wait);
+        assertEquals(0, resourceMetrics12.wait);
+        assertEquals(1, resourceMetrics2.wait);
+        assertEquals(0, resourceMetrics22.wait);
     }
 
     class GetConnectionTask implements Runnable {

@@ -1,5 +1,6 @@
-package dev.jfr4jdbc.event.jfr;
+package dev.jfr4jdbc.internal;
 
+import dev.jfr4jdbc.event.jfr.JfrJdbcEvent;
 import jdk.jfr.Label;
 import jdk.jfr.Period;
 import jdk.jfr.StackTrace;
@@ -8,6 +9,10 @@ import jdk.jfr.StackTrace;
 @Label("ConnectionResource")
 @StackTrace(false)
 public class JfrConnectionResourceEvent extends JfrJdbcEvent {
+
+    static {
+        Jfr4Jdbc.initialize();
+    }
 
     private final String label;
     private final int usage;

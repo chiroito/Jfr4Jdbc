@@ -1,6 +1,9 @@
 package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.event.jfr.JfrStatementEvent;
+import dev.jfr4jdbc.interceptor.MockInterceptor;
+import dev.jfr4jdbc.interceptor.MockInterceptorFactory;
+import dev.jfr4jdbc.interceptor.StatementContext;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,30 +41,36 @@ class JfrPreparedStatementTest {
     @DisplayName("create StatementEvent by executeQuery")
     @Test
     void createStatementEventByExecuteQuery() throws Exception {
-        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
-        FlightRecording fr = FlightRecording.start();
-        statement.executeQuery();
-        fr.stop();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL, mockInterceptorFactory);
+        statement.executeQuery();
+
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
+
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent by executeQuery with Null Param")
     @Test
     void createStatementEventByExecuteQueryWithNullParam() throws Exception {
-        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
-        statement.setString(0, null);
-        FlightRecording fr = FlightRecording.start();
-        statement.executeQuery();
-        fr.stop();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL, mockInterceptorFactory);
+        statement.setString(0, null);
+        statement.executeQuery();
+
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
+
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(event.isPrepared);
     }
 
     @DisplayName("return JfrResultSet by executeQuery")
@@ -76,59 +85,71 @@ class JfrPreparedStatementTest {
     @DisplayName("create StatementEvent by executeUpdate")
     @Test
     void createStatementEventByExecuteUpdate() throws Exception {
-        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
-        FlightRecording fr = FlightRecording.start();
-        statement.executeUpdate();
-        fr.stop();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL, mockInterceptorFactory);
+        statement.executeUpdate();
+
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
+
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent by executeUpdate with Null Param")
     @Test
     void createStatementEventByExecuteUpdateWithNullParam() throws Exception {
-        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
-        statement.setString(0, null);
-        FlightRecording fr = FlightRecording.start();
-        statement.executeUpdate();
-        fr.stop();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL, mockInterceptorFactory);
+        statement.setString(0, null);
+        statement.executeUpdate();
+
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
+
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent by execute")
     @Test
     void createStatementEventByExecute() throws Exception {
-        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
-        FlightRecording fr = FlightRecording.start();
-        statement.execute();
-        fr.stop();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL, mockInterceptorFactory);
+        statement.execute();
+
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
+
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(event.isPrepared);
     }
 
     @DisplayName("create StatementEvent by execute with Null Param")
     @Test
     void createStatementEventByExecuteWithNullParam() throws Exception {
-        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL);
-        statement.setString(0, null);
-        FlightRecording fr = FlightRecording.start();
-        statement.execute();
-        fr.stop();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrStatementEvent.class.getName())).collect(Collectors.toList());
+        JfrPreparedStatement statement = new JfrPreparedStatement(this.delegatePstate, JfrStatementTest.SAMPLE_SQL, mockInterceptorFactory);
+        statement.setString(0, null);
+        statement.execute();
+
+        MockInterceptor<StatementContext> interceptor = mockInterceptorFactory.createStatementInterceptor();
+        List<StatementContext> events = interceptor.getAllPostEvents();
+
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertTrue(event.getBoolean("prepared"));
+
+        StatementContext event = events.get(0);
+        assertTrue(event.isPrepared);
     }
 
     @DisplayName("addBatch")

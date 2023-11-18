@@ -1,6 +1,11 @@
 package dev.jfr4jdbc;
 
 import dev.jfr4jdbc.event.jfr.JfrResultSetEvent;
+import dev.jfr4jdbc.interceptor.MockInterceptor;
+import dev.jfr4jdbc.interceptor.MockInterceptorFactory;
+import dev.jfr4jdbc.interceptor.ResultSetContext;
+import dev.jfr4jdbc.internal.ConnectionInfo;
+import dev.jfr4jdbc.internal.OperationInfo;
 import jdk.jfr.consumer.RecordedEvent;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,8 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,20 +45,23 @@ class JfrResultSetTest {
     @Test
     void createStatementEvent() throws Exception {
         when(this.delegateResultSet.getRow()).thenReturn(1);
+        when(this.delegateResultSet.next()).thenReturn(true);
 
-        JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet);
-        FlightRecording fr = FlightRecording.start();
+        MockInterceptorFactory mockInterceptorFactory = new MockInterceptorFactory();
+        JfrResultSet resultSet = new JfrResultSet(this.delegateResultSet, mockInterceptorFactory);
         resultSet.next();
-        fr.stop();
 
-        List<RecordedEvent> events = fr.getEvents().stream().filter(e -> e.getEventType().getName().equals(JfrResultSetEvent.class.getName())).collect(Collectors.toList());
+        MockInterceptor<ResultSetContext> interceptor = mockInterceptorFactory.createResultSetInterceptor();
+        List<ResultSetContext> events = interceptor.getAllPostEvents();
+
         assertEquals(1, events.size());
-        RecordedEvent event = events.get(0);
-        assertEquals(1, event.getInt("rowNo"));
-        assertEquals(0, event.getInt("connectionId"));
-        assertEquals(0, event.getInt("statementId"));
-        assertEquals(0, event.getInt("resultSetId"));
-        assertTrue(event.getClass("resultSetClass") != null);
+
+        ResultSetContext event = events.get(0);
+        assertTrue(event.isResult());
+        assertEquals(1, event.getRowNo());
+        assertEquals(ConnectionInfo.NO_INFO, event.connectionInfo);
+        assertEquals(OperationInfo.NO_INFO, event.operationInfo);
+        assertNotNull(event.resultSet);
     }
 
     @DisplayName("absolute")
